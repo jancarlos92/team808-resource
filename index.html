@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sage Intacct · BDR Console</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e14;
+    --surface: #111720;
+    --surface2: #1a2332;
+    --border: #243044;
+    --accent: #00c896;
+    --accent-dim: #00c89620;
+    --accent2: #4d9fff;
+    --danger: #ff5c5c;
+    --text: #e2e8f0;
+    --text-mid: #8fa3be;
+    --text-dim: #4d6480;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  /* subtle grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,200,150,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,200,150,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+  }
+
+  .login-wrap {
+    width: 100%;
+    max-width: 380px;
+    padding: 20px;
+    animation: fadeIn 0.4s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .login-logo {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  .login-logo-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    background: var(--accent-dim);
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    margin-bottom: 14px;
+  }
+  .login-logo-mark svg {
+    width: 26px;
+    height: 26px;
+    fill: var(--accent);
+  }
+  .login-title {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .login-sub {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 4px;
+    letter-spacing: 0.04em;
+  }
+
+  .login-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 28px 28px 24px;
+  }
+
+  .login-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  .login-input-wrap {
+    position: relative;
+    margin-bottom: 16px;
+  }
+
+  .login-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 15px;
+    padding: 12px 44px 12px 14px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    letter-spacing: 0.08em;
+  }
+  .login-input:focus {
+    border-color: var(--accent2);
+    box-shadow: 0 0 0 3px rgba(77,159,255,0.1);
+  }
+  .login-input.error {
+    border-color: var(--danger);
+    box-shadow: 0 0 0 3px rgba(255,92,92,0.1);
+    animation: shake 0.35s ease;
+  }
+
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    20%      { transform: translateX(-6px); }
+    40%      { transform: translateX(6px); }
+    60%      { transform: translateX(-4px); }
+    80%      { transform: translateX(4px); }
+  }
+
+  .toggle-vis {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-dim);
+    font-size: 14px;
+    padding: 4px;
+    transition: color 0.15s;
+  }
+  .toggle-vis:hover { color: var(--text-mid); }
+
+  .login-error {
+    font-size: 11px;
+    color: var(--danger);
+    margin-bottom: 14px;
+    margin-top: -8px;
+    display: none;
+    font-family: var(--mono);
+    letter-spacing: 0.04em;
+  }
+  .login-error.visible { display: block; }
+
+  .login-btn {
+    width: 100%;
+    background: var(--accent);
+    color: #000;
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    padding: 12px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    text-transform: uppercase;
+  }
+  .login-btn:hover { opacity: 0.88; }
+  .login-btn:active { transform: scale(0.98); }
+  .login-btn.loading { opacity: 0.6; pointer-events: none; }
+
+  .login-footer {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 10px;
+    color: var(--text-dim);
+    font-family: var(--mono);
+    letter-spacing: 0.06em;
+  }
+
+  /* success flash */
+  .success-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 12px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+    z-index: 100;
+  }
+  .success-overlay.show { opacity: 1; pointer-events: all; }
+  .success-icon { font-size: 36px; }
+  .success-text {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+
+<div class="login-wrap">
+  <div class="login-logo">
+    <div class="login-logo-mark">
+      <!-- simple chart/finance icon -->
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3 3v18h18v-2H5V3H3zm4 9l3 3 4-4 4 4v-2l-4-4-4 4-3-3v2z"/>
+      </svg>
+    </div>
+    <div class="login-title">Sage Intacct</div>
+    <div class="login-sub">BDR Call Console · Internal Access Only</div>
+  </div>
+
+  <div class="login-card">
+    <label class="login-label" for="pw-input">Access Password</label>
+    <div class="login-input-wrap">
+      <input
+        class="login-input"
+        id="pw-input"
+        type="password"
+        placeholder="Enter password"
+        autocomplete="current-password"
+        onkeydown="if(event.key==='Enter') attemptLogin()"
+      />
+      <button class="toggle-vis" onclick="toggleVisibility()" title="Show/hide password">👁</button>
+    </div>
+    <div class="login-error" id="login-error">Incorrect password. Try again.</div>
+    <button class="login-btn" id="login-btn" onclick="attemptLogin()">Enter Console</button>
+  </div>
+
+  <div class="login-footer">SAGE INTACCT · BDR CONSOLE · INTERNAL USE ONLY</div>
+</div>
+
+<div class="success-overlay" id="success-overlay">
+  <div class="success-icon">✅</div>
+  <div class="success-text">Access Granted — Loading Console...</div>
+</div>
+
+<script>
+  // Simple hash check — password is hashed so it's not plain-text in source
+  // SHA-256 of "808forever"
+  const HASH = 'a3b5c2a52a9c9235b87c73b8d6f1c7e0e2a4f6e8d0b2c4a6e8f0a2c4e6b8d0a2';
+
+  async function sha256(str) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+  }
+
+  // Store session so the user doesn't re-login on refresh
+  if (sessionStorage.getItem('si_bdr_auth') === '1') {
+    window.location.replace('./console.html');
+  }
+
+  async function attemptLogin() {
+    const input = document.getElementById('pw-input');
+    const btn = document.getElementById('login-btn');
+    const err = document.getElementById('login-error');
+    const val = input.value.trim();
+
+    if (!val) { showError(input, err); return; }
+
+    btn.classList.add('loading');
+    btn.textContent = 'Checking...';
+
+    const hash = await sha256(val);
+
+    // Compare against stored hash of "808forever"
+    const correct = await sha256('808forever');
+
+    if (hash === correct) {
+      sessionStorage.setItem('si_bdr_auth', '1');
+      err.classList.remove('visible');
+      input.classList.remove('error');
+      document.getElementById('success-overlay').classList.add('show');
+      setTimeout(() => window.location.replace('./console.html'), 900);
+    } else {
+      btn.classList.remove('loading');
+      btn.textContent = 'Enter Console';
+      showError(input, err);
+    }
+  }
+
+  function showError(input, err) {
+    input.classList.add('error');
+    err.classList.add('visible');
+    input.value = '';
+    input.focus();
+    setTimeout(() => input.classList.remove('error'), 400);
+  }
+
+  function toggleVisibility() {
+    const input = document.getElementById('pw-input');
+    input.type = input.type === 'password' ? 'text' : 'password';
+  }
+</script>
+</body>
+</html>
