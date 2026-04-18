@@ -1,0 +1,3089 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sage Intacct · BDR Call Console</title>
+<script>
+  // Auth guard — redirect to login if not authenticated
+  if (sessionStorage.getItem('si_bdr_auth') !== '1') {
+    window.location.replace('./index.html');
+  }
+</script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e14;
+    --surface: #111720;
+    --surface2: #1a2332;
+    --surface3: #1e2a3a;
+    --border: #243044;
+    --border-bright: #2e3f58;
+    --accent: #00c896;
+    --accent-dim: #00c89620;
+    --accent2: #4d9fff;
+    --accent2-dim: #4d9fff18;
+    --warn: #f5a623;
+    --warn-dim: #f5a62320;
+    --danger: #ff5c5c;
+    --danger-dim: #ff5c5c18;
+    --text: #e2e8f0;
+    --text-mid: #8fa3be;
+    --text-dim: #4d6480;
+    --green-hi: #00c89628;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 13px;
+    line-height: 1.5;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── TOP BAR ── */
+  .topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-shrink: 0;
+  }
+  .topbar-logo {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+  }
+  .topbar-logo span { color: var(--text-mid); font-weight: 400; }
+
+  .setup-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+  }
+  .setup-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  select {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 12px;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s;
+    min-width: 140px;
+  }
+  select:focus { border-color: var(--accent2); }
+  select option { background: var(--surface2); }
+
+  .timer-display {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .timer-value {
+    font-family: var(--mono);
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+  }
+  .timer-value.warning { color: var(--warn); }
+  .btn-timer {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-mid);
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 5px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    letter-spacing: 0.08em;
+    transition: all 0.15s;
+  }
+  .btn-timer:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-timer.active { background: var(--accent); color: #000; border-color: var(--accent); }
+
+  /* ── LAYOUT ── */
+  .main {
+    display: grid;
+    grid-template-columns: 260px 1fr 280px;
+    grid-template-rows: 1fr;
+    flex: 1;
+    overflow: hidden;
+    gap: 0;
+  }
+
+  /* ── LEFT NAV ── */
+  .leftnav {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 12px 0;
+  }
+  .nav-section-title {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    padding: 8px 16px 4px;
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 16px;
+    cursor: pointer;
+    transition: background 0.15s;
+    border-left: 2px solid transparent;
+  }
+  .nav-item:hover { background: var(--surface2); }
+  .nav-item.active {
+    background: var(--accent2-dim);
+    border-left-color: var(--accent2);
+  }
+  .nav-item.active .nav-label { color: var(--accent2); }
+  .nav-step {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    width: 22px;
+    flex-shrink: 0;
+  }
+  .nav-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-mid);
+  }
+  .nav-badge {
+    margin-left: auto;
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text-dim);
+    padding: 1px 6px;
+    border-radius: 10px;
+  }
+  .nav-divider { height: 1px; background: var(--border); margin: 8px 16px; }
+
+  /* ── CENTER PANEL ── */
+  .centerpanel {
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 4px;
+  }
+  .panel-stepnum {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+    background: var(--accent-dim);
+    padding: 3px 8px;
+    border-radius: 3px;
+  }
+  .panel-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .panel-hint {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-style: italic;
+  }
+
+  .script-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .script-card:hover { border-color: var(--border-bright); }
+  .script-card.highlighted {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent-dim), inset 0 0 20px var(--accent-dim);
+  }
+  .script-card.locked { border-color: var(--accent2); }
+
+  .card-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 14px 10px;
+  }
+  .card-tag {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    padding: 3px 7px;
+    border-radius: 3px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .tag-locked { background: var(--accent2-dim); color: var(--accent2); border: 1px solid var(--accent2); }
+  .tag-flex { background: var(--warn-dim); color: var(--warn); border: 1px solid var(--warn); }
+  .tag-highlight { background: var(--green-hi); color: var(--accent); border: 1px solid var(--accent); }
+  .tag-objection { background: var(--danger-dim); color: var(--danger); border: 1px solid var(--danger); }
+  .tag-close { background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent); }
+
+  .card-script {
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.65;
+    flex: 1;
+  }
+  .card-script em {
+    color: var(--accent2);
+    font-style: normal;
+    font-weight: 600;
+  }
+  .card-note {
+    padding: 8px 14px;
+    background: var(--surface2);
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--text-mid);
+    font-style: italic;
+  }
+
+  .section-block {
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .section-block.active { display: flex; }
+
+  /* objection accordion */
+  .obj-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .obj-trigger {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .obj-trigger:hover { background: var(--surface2); }
+  .obj-q {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--danger);
+    flex: 1;
+  }
+  .obj-chevron {
+    color: var(--text-dim);
+    font-size: 11px;
+    transition: transform 0.2s;
+  }
+  .obj-item.open .obj-chevron { transform: rotate(90deg); }
+  .obj-body {
+    display: none;
+    padding: 10px 14px 12px;
+    background: var(--surface2);
+    border-top: 1px solid var(--border);
+  }
+  .obj-item.open .obj-body { display: block; }
+  .obj-body p { font-size: 12px; color: var(--text); line-height: 1.6; }
+
+  /* BANT */
+  .bant-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .bant-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 14px;
+  }
+  .bant-letter {
+    font-family: var(--mono);
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--accent2);
+    margin-bottom: 8px;
+  }
+  .bant-qs { display: flex; flex-direction: column; gap: 6px; }
+  .bant-q {
+    font-size: 11px;
+    color: var(--text-mid);
+    line-height: 1.5;
+    padding: 6px 10px;
+    background: var(--surface2);
+    border-radius: 4px;
+    border-left: 2px solid var(--border);
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .bant-q.star { border-left-color: var(--accent2); color: var(--text); }
+  .bant-q:hover { border-left-color: var(--accent); color: var(--text); }
+
+  /* ── RIGHT PANEL ── */
+  .rightpanel {
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+  .rp-section {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .rp-title {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  /* ref table */
+  .ref-row {
+    display: grid;
+    grid-template-columns: 100px 1fr;
+    gap: 6px;
+    margin-bottom: 7px;
+    align-items: start;
+  }
+  .ref-sys {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent2);
+    padding-top: 1px;
+  }
+  .ref-angle { font-size: 11px; color: var(--text-mid); line-height: 1.45; }
+
+
+  .scorecard {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .score-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+  }
+  .score-pass { background: var(--accent-dim); color: var(--accent); }
+  .score-nurture { background: var(--warn-dim); color: var(--warn); }
+  .score-disq { background: var(--danger-dim); color: var(--danger); }
+  .score-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .dot-pass { background: var(--accent); }
+  .dot-nurture { background: var(--warn); }
+  .dot-disq { background: var(--danger); }
+
+  /* battle cards */
+  .battle-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px 6px 0 0;
+    border-bottom: none;
+  }
+  .battle-vs {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--danger);
+    letter-spacing: 0.1em;
+    font-weight: 600;
+  }
+  .battle-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .battle-when {
+    margin-left: auto;
+    font-size: 10px;
+    color: var(--text-dim);
+    font-style: italic;
+  }
+  .battle-positioning {
+    background: var(--accent-dim);
+    border: 1px solid var(--accent);
+    border-radius: 5px;
+    padding: 11px 14px;
+    font-size: 12px;
+    color: var(--text);
+    line-height: 1.65;
+  }
+  .battle-positioning strong { color: var(--accent); font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; display: block; margin-bottom: 5px; }
+  .battle-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+  }
+  .battle-table th {
+    background: var(--surface2);
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 8px 10px;
+    text-align: left;
+    border: 1px solid var(--border);
+  }
+  .battle-table th.win { color: var(--accent); }
+  .battle-table th.lose { color: var(--danger); }
+  .battle-table td {
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    vertical-align: top;
+    line-height: 1.5;
+    color: var(--text-mid);
+  }
+  .battle-table tr:nth-child(even) td { background: var(--surface2); }
+  .battle-table td.area { color: var(--text); font-weight: 500; font-size: 11px; }
+  .battle-table td.win { color: var(--accent); }
+  .battle-table td.lose { color: var(--text-dim); font-style: italic; }
+  .battle-wedge {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 12px 14px;
+  }
+  .battle-wedge-title {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    color: var(--accent2);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .battle-wedge-q {
+    font-size: 12px;
+    color: var(--text-mid);
+    padding: 6px 10px;
+    background: var(--surface2);
+    border-left: 2px solid var(--accent2);
+    border-radius: 0 4px 4px 0;
+    margin-bottom: 6px;
+    line-height: 1.5;
+  }
+  .battle-pain {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 12px 14px;
+  }
+  .battle-pain-item {
+    font-size: 11px;
+    color: var(--text-mid);
+    padding: 5px 10px;
+    border-left: 2px solid var(--accent);
+    background: var(--accent-dim);
+    border-radius: 0 4px 4px 0;
+    margin-bottom: 5px;
+    line-height: 1.45;
+  }
+  .battle-talk {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 12px 14px;
+  }
+  .battle-talk-step {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 8px;
+    align-items: flex-start;
+  }
+  .battle-talk-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    color: var(--warn);
+    background: var(--warn-dim);
+    border: 1px solid var(--warn);
+    border-radius: 3px;
+    padding: 2px 7px;
+    white-space: nowrap;
+    margin-top: 1px;
+    flex-shrink: 0;
+  }
+  .battle-talk-text { font-size: 12px; color: var(--text); line-height: 1.6; }
+  .battle-landmine {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 12px 14px;
+  }
+  .landmine-row { margin-bottom: 9px; }
+  .landmine-dont { font-size: 11px; color: var(--danger); margin-bottom: 3px; }
+  .landmine-do { font-size: 11px; color: var(--accent); }
+  .battle-cta {
+    background: var(--accent-dim);
+    border: 1px solid var(--accent);
+    border-radius: 5px;
+    padding: 12px 14px;
+    font-size: 12px;
+    color: var(--text);
+    line-height: 1.65;
+  }
+  .battle-cta strong { color: var(--accent); font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; display: block; margin-bottom: 5px; }
+  .battle-honest {
+    background: var(--surface2);
+    border: 1px solid var(--border-bright);
+    border-radius: 5px;
+    padding: 12px 14px;
+  }
+  .battle-honest-title {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 7px;
+  }
+  .battle-honest-item {
+    font-size: 11px;
+    color: var(--text-dim);
+    padding: 4px 0 4px 10px;
+    border-left: 2px solid var(--border-bright);
+    margin-bottom: 4px;
+    line-height: 1.45;
+  }
+
+  /* industry discovery */
+  .disc-kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .disc-kpi-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 14px;
+    cursor: pointer;
+    transition: background 0.15s;
+    border-bottom: 1px solid var(--border);
+  }
+  .disc-kpi-header:hover { background: var(--surface2); }
+  .disc-kpi-header.open { background: var(--surface2); }
+  .disc-kpi-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    padding: 3px 8px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+  .disc-kpi-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    flex: 1;
+  }
+  .disc-kpi-chevron {
+    color: var(--text-dim);
+    font-size: 11px;
+    transition: transform 0.2s;
+  }
+  .disc-kpi-card.open .disc-kpi-chevron { transform: rotate(90deg); }
+  .disc-kpi-body { display: none; padding: 14px; }
+  .disc-kpi-card.open .disc-kpi-body { display: block; }
+  .disc-sub-title {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 7px;
+    margin-top: 12px;
+  }
+  .disc-sub-title:first-child { margin-top: 0; }
+  .disc-q {
+    font-size: 12px;
+    color: var(--text-mid);
+    padding: 7px 10px;
+    background: var(--surface2);
+    border-left: 2px solid var(--accent2);
+    border-radius: 0 4px 4px 0;
+    margin-bottom: 6px;
+    line-height: 1.55;
+  }
+  .disc-pain-item {
+    font-size: 11px;
+    color: var(--text-mid);
+    padding: 5px 10px;
+    border-left: 2px solid var(--accent);
+    background: var(--accent-dim);
+    border-radius: 0 4px 4px 0;
+    margin-bottom: 5px;
+    line-height: 1.45;
+  }
+  .disc-value-item {
+    font-size: 11px;
+    color: var(--text-mid);
+    padding: 5px 10px;
+    border-left: 2px solid var(--accent2);
+    background: var(--accent2-dim);
+    border-radius: 0 4px 4px 0;
+    margin-bottom: 5px;
+    line-height: 1.45;
+  }
+  .disc-cta {
+    background: var(--accent-dim);
+    border: 1px solid var(--accent);
+    border-radius: 5px;
+    padding: 10px 13px;
+    font-size: 12px;
+    color: var(--text);
+    line-height: 1.65;
+    margin-top: 4px;
+  }
+  .disc-cta strong { color: var(--accent); font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; display: block; margin-bottom: 4px; }
+  .disc-wedge-note {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-style: italic;
+    padding: 7px 10px;
+    background: var(--surface2);
+    border-radius: 4px;
+    border-left: 2px solid var(--warn);
+    margin-top: 4px;
+  }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 10px; }
+
+  /* pill status */
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 3px 9px;
+    border-radius: 20px;
+    letter-spacing: 0.06em;
+  }
+  .pill-live { background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent); }
+  .pill-live::before { content:''; width:6px; height:6px; border-radius:50%; background:var(--accent); animation: blink 1s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .vertical-pain-note {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 5px 5px 0;
+    padding: 10px 13px;
+    font-size: 12px;
+    color: var(--text-mid);
+    line-height: 1.6;
+    display: none;
+  }
+  .vertical-pain-note.visible { display: block; }
+  .vertical-pain-note strong { color: var(--accent); display: block; font-size: 11px; font-family: var(--mono); margin-bottom: 4px; letter-spacing: 0.08em; }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-logo">SAGE INTACCT <span>· BDR CONSOLE</span></div>
+  <span class="status-pill pill-live">LIVE</span>
+
+  <div class="setup-row">
+    <span class="setup-label">Vertical</span>
+    <select id="selVertical" onchange="onSetupChange()">
+      <option value="">— Select Vertical —</option>
+      <option value="trucking">🚚 Trucking / Transport</option>
+      <option value="carwash">🚗 Car Washes</option>
+      <option value="landscaping">🌿 Landscaping</option>
+      <option value="pest">🐛 Pest Control</option>
+      <option value="auto">🔧 Auto Services</option>
+      <option value="restaurant">🍽️ Restaurants</option>
+      <option value="hospitality">🏨 Hotels / Hospitality</option>
+      <option value="cannabis">🌿 Cannabis</option>
+      <option value="fitness">💪 Fitness / Wellness</option>
+      <option value="smb">🏢 General SMB</option>
+    </select>
+
+    <span class="setup-label">Current System</span>
+    <select id="selSystem" onchange="onSetupChange()">
+      <option value="">— Select System —</option>
+      <option value="qbd">QuickBooks Desktop</option>
+      <option value="qbo">QuickBooks Online</option>
+      <option value="netsuite">NetSuite</option>
+      <option value="sage50">Sage 50 / 100</option>
+      <option value="dynamics">Dynamics GP</option>
+      <option value="sheets">Spreadsheets Only</option>
+      <option value="unknown">Unknown</option>
+    </select>
+
+    <span class="setup-label">Primary Pain</span>
+    <select id="selPain" onchange="onSetupChange()">
+      <option value="">— Select Pain —</option>
+      <option value="jobprofit">No Job / Unit Profitability</option>
+      <option value="multiloc">Multi-Location Reporting</option>
+      <option value="closeexcel">Manual Close / Too Much Excel</option>
+      <option value="visibility">No Real-Time Visibility</option>
+      <option value="multientity">Multi-Entity Consolidation</option>
+      <option value="scaling">System Outgrown / Scaling</option>
+    </select>
+  </div>
+
+  <div class="timer-display">
+    <div class="timer-value" id="timerDisplay">0:00</div>
+    <button class="btn-timer" id="btnTimer" onclick="toggleTimer()">START</button>
+    <button class="btn-timer" onclick="resetTimer()">RESET</button>
+  </div>
+</div>
+
+<!-- MAIN LAYOUT -->
+<div class="main">
+
+  <!-- LEFT NAV -->
+  <div class="leftnav">
+    <div class="nav-section-title">Call Steps</div>
+    <div class="nav-item active" onclick="showSection('opener')">
+      <span class="nav-step">1</span>
+      <span class="nav-label">Opener</span>
+      <span class="nav-badge">LOCKED</span>
+    </div>
+    <div class="nav-item" onclick="showSection('valueprop')">
+      <span class="nav-step">2</span>
+      <span class="nav-label">Value Prop</span>
+      <span class="nav-badge">FLEX</span>
+    </div>
+    <div class="nav-item" onclick="showSection('painprop')">
+      <span class="nav-step">3</span>
+      <span class="nav-label">Pain Prop</span>
+      <span class="nav-badge">FLEX</span>
+    </div>
+    <div class="nav-item" onclick="showSection('transition')">
+      <span class="nav-step">4</span>
+      <span class="nav-label">Transition Q</span>
+      <span class="nav-badge">FLEX</span>
+    </div>
+    <div class="nav-item" onclick="showSection('objections')">
+      <span class="nav-step">4.5</span>
+      <span class="nav-label">Objections</span>
+      <span class="nav-badge">24</span>
+    </div>
+    <div class="nav-item" onclick="showSection('close')">
+      <span class="nav-step">5</span>
+      <span class="nav-label">Close for Time</span>
+      <span class="nav-badge">CLOSE</span>
+    </div>
+
+    <div class="nav-divider"></div>
+    <div class="nav-section-title">Discovery</div>
+    <div class="nav-item" onclick="showSection('bant')">
+      <span class="nav-step">B</span>
+      <span class="nav-label">BANT Framework</span>
+    </div>
+    <div class="nav-item" onclick="showSection('spiv')">
+      <span class="nav-step">S</span>
+      <span class="nav-label">SPIV Deepeners</span>
+    </div>
+    <div class="nav-item" onclick="showSection('disc-lodging')">
+      <span class="nav-step">🏨</span>
+      <span class="nav-label">Lodging KPI Deep-Dive</span>
+    </div>
+    <div class="nav-item" onclick="showSection('disc-trucking')">
+      <span class="nav-step">🚛</span>
+      <span class="nav-label">Trucking / Transport</span>
+    </div>
+    <div class="nav-item" onclick="showSection('disc-carwash')">
+      <span class="nav-step">🚗</span>
+      <span class="nav-label">Car Washes</span>
+    </div>
+    <div class="nav-item" onclick="showSection('disc-landscaping')">
+      <span class="nav-step">🌿</span>
+      <span class="nav-label">Landscaping</span>
+    </div>
+    <div class="nav-item" onclick="showSection('disc-pest')">
+      <span class="nav-step">🐛</span>
+      <span class="nav-label">Pest Control</span>
+    </div>
+    <div class="nav-item" onclick="showSection('disc-auto')">
+      <span class="nav-step">🔧</span>
+      <span class="nav-label">Auto Services</span>
+    </div>
+    <div class="nav-item" onclick="showSection('disc-restaurant')">
+      <span class="nav-step">🍽️</span>
+      <span class="nav-label">Restaurants</span>
+    </div>
+    <div class="nav-item" onclick="showSection('disc-cannabis')">
+      <span class="nav-step">🌿</span>
+      <span class="nav-label">Cannabis</span>
+    </div>
+    <div class="nav-item" onclick="showSection('disc-fitness')">
+      <span class="nav-step">💪</span>
+      <span class="nav-label">Fitness / Wellness</span>
+    </div>
+    <div class="nav-item" onclick="showSection('disc-smb')">
+      <span class="nav-step">🏢</span>
+      <span class="nav-label">General SMB</span>
+    </div>
+
+    <div class="nav-divider"></div>
+    <div class="nav-section-title">Battle Cards</div>
+    <div class="nav-item" onclick="showSection('battle-r365')">
+      <span class="nav-step">⚔</span>
+      <span class="nav-label">vs Restaurant365</span>
+      <span class="nav-badge">R365</span>
+    </div>
+    <div class="nav-item" onclick="showSection('battle-netsuite')">
+      <span class="nav-step">⚔</span>
+      <span class="nav-label">vs NetSuite</span>
+      <span class="nav-badge">NS</span>
+    </div>
+    <div class="nav-item" onclick="showSection('battle-mcleod')">
+      <span class="nav-step">⚔</span>
+      <span class="nav-label">vs McLeod</span>
+      <span class="nav-badge">MCL</span>
+    </div>
+    <div class="nav-item" onclick="showSection('battle-m3')">
+      <span class="nav-step">⚔</span>
+      <span class="nav-label">vs M3 Accounting</span>
+      <span class="nav-badge">M3</span>
+    </div>
+    <div class="nav-item" onclick="showSection('battle-gp')">
+      <span class="nav-step">⚔</span>
+      <span class="nav-label">vs Dynamics GP</span>
+      <span class="nav-badge">GP</span>
+    </div>
+
+  </div>
+
+  <!-- CENTER PANEL -->
+  <div class="centerpanel">
+
+    <!-- OPENER -->
+    <div class="section-block active" id="sec-opener">
+      <div class="panel-header">
+        <span class="panel-stepnum">STEP 1</span>
+        <span class="panel-title">Opener</span>
+        <span class="panel-hint">🔒 Say this exactly — same on every call</span>
+      </div>
+
+      <div class="script-card locked">
+        <div class="card-top">
+          <span class="card-tag tag-locked">OPENING LINE</span>
+          <span class="card-script">"Hi <em>[NAME]</em>, how are you? This is <em>[YOUR NAME]</em> from Sage Intacct — reaching out to find some time on your calendar. Are you available <em>[DAY]</em> at <em>[TIME]</em>?"</span>
+        </div>
+        <div class="card-note">They will ask 'Who is this?' — that's expected. Don't flinch.</div>
+      </div>
+
+      <div class="script-card locked">
+        <div class="card-top">
+          <span class="card-tag tag-locked">WHEN THEY ASK WHY</span>
+          <span class="card-script">"Before I get into it — just want to make sure I'm talking to the right person. Are you the <em>[CFO / Controller / person running accounting]</em> over at <em>[COMPANY]</em>?"</span>
+        </div>
+        <div class="card-note">Wait for title confirmation. Don't skip — cleaner conversations every time.</div>
+      </div>
+
+      <div class="script-card locked">
+        <div class="card-top">
+          <span class="card-tag tag-locked">✅ BRIDGE (after confirm)</span>
+          <span class="card-script">"I figured — the reason I'm calling is that CFOs and Controllers at companies your size are dealing with a lot right now. Between visibility into job profitability, multi-location reporting, and closing the books without living in Excel — it's a tough spot when the system isn't keeping up. That's exactly what we help with at Sage Intacct."</span>
+        </div>
+        <div class="card-note">⚡ Pause after "tough spot." Let it breathe. Fill that silence and you lose the moment.</div>
+      </div>
+
+      <div class="script-card">
+        <div class="card-top">
+          <span class="card-tag tag-flex">WRONG PERSON</span>
+          <span class="card-script">"No worries — who would be the best person to connect with on the finance or accounting side?"</span>
+        </div>
+        <div class="card-note">Get the referral. Gather intel while you can.</div>
+      </div>
+    </div>
+
+    <!-- VALUE PROP -->
+    <div class="section-block" id="sec-valueprop">
+      <div class="panel-header">
+        <span class="panel-stepnum">STEP 2</span>
+        <span class="panel-title">Value Prop</span>
+        <span class="panel-hint">Highlighted row = best match for selected pain</span>
+      </div>
+
+      <div id="vp-jobprofit" class="script-card">
+        <div class="card-top">
+          <span class="card-tag tag-flex">JOB / UNIT PROFIT</span>
+          <span class="card-script">"We work with companies managing multiple jobs, routes, or locations who have no idea which ones are actually making money. We give finance teams real-time job and unit profitability — without living in spreadsheets."</span>
+        </div>
+        <div class="card-note">PAIN: No Job / Unit Profitability</div>
+      </div>
+      <div id="vp-multiloc" class="script-card">
+        <div class="card-top">
+          <span class="card-tag tag-flex">MULTI-LOCATION</span>
+          <span class="card-script">"We work with companies running multiple locations who can't get a P&L by location without a manual export. We make that a live dashboard — so ownership can see every unit in real time."</span>
+        </div>
+        <div class="card-note">PAIN: Multi-Location Reporting</div>
+      </div>
+      <div id="vp-closeexcel" class="script-card">
+        <div class="card-top">
+          <span class="card-tag tag-flex">MANUAL CLOSE</span>
+          <span class="card-script">"We work with finance teams where month-end close is still a multi-week Excel project. We automate that — so your team closes faster and leadership gets reports without waiting."</span>
+        </div>
+        <div class="card-note">PAIN: Manual Close / Excel</div>
+      </div>
+      <div id="vp-visibility" class="script-card">
+        <div class="card-top">
+          <span class="card-tag tag-flex">REAL-TIME VISIBILITY</span>
+          <span class="card-script">"We work with CFOs and Controllers who can't answer a cash or margin question without running a report first. We give leadership live dashboards — so the answer is always there, not 48 hours away."</span>
+        </div>
+        <div class="card-note">PAIN: No Real-Time Visibility</div>
+      </div>
+      <div id="vp-multientity" class="script-card">
+        <div class="card-top">
+          <span class="card-tag tag-flex">MULTI-ENTITY</span>
+          <span class="card-script">"We work with companies managing multiple entities or LLCs who are consolidating in spreadsheets every month. We automate consolidations — one view across all entities, no manual work."</span>
+        </div>
+        <div class="card-note">PAIN: Multi-Entity Consolidation</div>
+      </div>
+      <div id="vp-scaling" class="script-card">
+        <div class="card-top">
+          <span class="card-tag tag-flex">SCALING / OUTGROWN</span>
+          <span class="card-script">"We work with companies that've grown past what QuickBooks or their current system can handle — more complexity, same manual workarounds. We're built for that next stage."</span>
+        </div>
+        <div class="card-note">PAIN: System Outgrown</div>
+      </div>
+    </div>
+
+    <!-- PAIN PROP -->
+    <div class="section-block" id="sec-painprop">
+      <div class="panel-header">
+        <span class="panel-stepnum">STEP 3</span>
+        <span class="panel-title">Pain Prop</span>
+        <span class="panel-hint">Layer pain on top of value — or lead with pain if they're defensive</span>
+      </div>
+
+      <div id="pp-jobprofit" class="script-card">
+        <div class="card-top">
+          <span class="card-tag tag-flex">JOB / UNIT PROFIT</span>
+          <span class="card-script">"A lot of companies we talk to in trucking, landscaping, and auto know their total revenue — but have no idea which jobs, routes, or bays are actually profitable. It's only when they look back at year-end that they realize some of it was costing them money."</span>
+        </div>
+      </div>
+      <div id="pp-multiloc" class="script-card">
+        <div class="card-top">
+          <span class="card-tag tag-flex">MULTI-LOCATION</span>
+          <span class="card-script">"The pattern we see: companies with multiple locations run QuickBooks at each one, then someone spends a week consolidating everything into Excel before ownership can see the full picture. By the time the report is ready, the numbers are already a month old."</span>
+        </div>
+      </div>
+      <div id="pp-closeexcel" class="script-card">
+        <div class="card-top">
+          <span class="card-tag tag-flex">MANUAL CLOSE</span>
+          <span class="card-script">"What we hear is that month-end becomes all-hands-on-deck — the Controller is living in spreadsheets, reporting takes two weeks, and leadership is making decisions off numbers that are 30 days stale. It's not a people problem. It's a systems problem."</span>
+        </div>
+      </div>
+      <div id="pp-visibility" class="script-card">
+        <div class="card-top">
+          <span class="card-tag tag-flex">REAL-TIME VISIBILITY</span>
+          <span class="card-script">"We talk to CFOs who can't answer 'what's our cash position today' without running a report first. Or ownership asks 'how's this location doing' and it takes two days to pull together. At your stage of growth, that lag costs you."</span>
+        </div>
+      </div>
+      <div id="pp-multientity" class="script-card">
+        <div class="card-top">
+          <span class="card-tag tag-flex">MULTI-ENTITY</span>
+          <span class="card-script">"We talk to finance teams managing two, three, five entities — each one closing separately, then someone consolidating in Excel across all of them. It works until it doesn't. One mistake in the wrong cell and the whole thing is off."</span>
+        </div>
+      </div>
+      <div id="pp-scaling" class="script-card">
+        <div class="card-top">
+          <span class="card-tag tag-flex">SCALING</span>
+          <span class="card-script">"We talk to Controllers running companies that've grown two or three times in the last few years — more locations, more complexity, more entities — on a system that was built for a much simpler version of the business."</span>
+        </div>
+      </div>
+
+      <!-- Vertical Pain Add-On -->
+      <div class="panel-header" style="margin-top:8px;">
+        <span class="panel-stepnum" style="background:var(--warn-dim);color:var(--warn);">VERTICAL ADD-ON</span>
+        <span class="panel-title" style="font-size:13px;">Layer this after pain prop</span>
+      </div>
+      <div id="vp-addon" class="vertical-pain-note">
+        <strong id="vp-addon-label">SELECT A VERTICAL ABOVE</strong>
+        <span id="vp-addon-text">Pick a vertical in the top bar to see the matching vertical pain add-on line.</span>
+      </div>
+    </div>
+
+    <!-- TRANSITION -->
+    <div class="section-block" id="sec-transition">
+      <div class="panel-header">
+        <span class="panel-stepnum">STEP 4</span>
+        <span class="panel-title">Transition Question</span>
+        <span class="panel-hint">Ask the highlighted question — then stop talking. Silence is your weapon.</span>
+      </div>
+
+      <div id="tq-core" class="script-card">
+        <div class="card-top">
+          <span class="card-tag tag-highlight">🔑 CORE (always works)</span>
+          <span class="card-script">"I'm curious — when it comes to <em>[job profitability / multi-location reporting / closing the books]</em>, which parts of that process are you still doing manually or in spreadsheets?"</span>
+        </div>
+        <div class="card-note">Works for any vertical or system.</div>
+      </div>
+
+      <div id="tq-qbd" class="script-card">
+        <div class="card-top">
+          <span class="card-tag tag-flex">QB DESKTOP</span>
+          <span class="card-script">"A lot of companies on QB Desktop tell us the reporting side ends up in Excel — location P&Ls, job costs, board reports. Is that something you're running into?"</span>
+        </div>
+      </div>
+      <div id="tq-qbo" class="script-card">
+        <div class="card-top">
+          <span class="card-tag tag-flex">QB ONLINE</span>
+          <span class="card-script">"QBO is great up to a point — where most teams hit the wall is multi-location visibility and job-level profitability. Is either of those a gap for you right now?"</span>
+        </div>
+      </div>
+      <div id="tq-netsuite" class="script-card">
+        <div class="card-top">
+          <span class="card-tag tag-flex">NETSUITE</span>
+          <span class="card-script">"NetSuite customers we talk to — the customization cost and renewal pricing is usually what starts the conversation. Is that on your radar heading into your next renewal?"</span>
+        </div>
+      </div>
+      <div id="tq-sage50" class="script-card">
+        <div class="card-top">
+          <span class="card-tag tag-flex">SAGE 50 / 100</span>
+          <span class="card-script">"Sage 50 and 100 teams we talk to have usually outgrown the reporting side — it works, but leadership wants more than it can give. Does that sound familiar?"</span>
+        </div>
+      </div>
+      <div id="tq-dynamics" class="script-card">
+        <div class="card-top">
+          <span class="card-tag tag-flex">DYNAMICS GP</span>
+          <span class="card-script">"GP teams we work with are usually dealing with aging customizations and support concerns. What does your IT situation look like around maintaining it?"</span>
+        </div>
+      </div>
+      <div id="tq-sheets" class="script-card">
+        <div class="card-top">
+          <span class="card-tag tag-flex">SPREADSHEETS ONLY</span>
+          <span class="card-script">"It sounds like you've essentially built your own system — what part of that is the most painful to maintain right now?"</span>
+        </div>
+      </div>
+      <div id="tq-unknown" class="script-card">
+        <div class="card-top">
+          <span class="card-tag tag-flex">UNKNOWN</span>
+          <span class="card-script">"What does your current financial reporting look like when leadership asks for a snapshot — how does that come together?"</span>
+        </div>
+      </div>
+      <div class="script-card">
+        <div class="card-top">
+          <span class="card-tag tag-flex">⚡ PRESSED FOR TIME</span>
+          <span class="card-script">"Quick one before I let you go — what part of your finance process right now is the most manual?"</span>
+        </div>
+        <div class="card-note">Use when they're rushed or cutting you off.</div>
+      </div>
+    </div>
+
+    <!-- OBJECTIONS -->
+    <div class="section-block" id="sec-objections">
+      <div class="panel-header">
+        <span class="panel-stepnum">STEP 4.5</span>
+        <span class="panel-title">Objection Handling</span>
+        <span class="panel-hint">Acknowledge → Reframe → Ask a question. Never argue.</span>
+      </div>
+
+      <div class="obj-item" onclick="toggleObj(this)">
+        <div class="obj-trigger"><span class="obj-q">"We're happy with what we have"</span><span class="obj-chevron">▶</span></div>
+        <div class="obj-body"><p>"Totally understand — most companies we end up working with said the same thing. Can I ask, when it comes to <em>[job profitability / multi-location reporting / closing the books]</em>, how much of that is still manual today?"</p></div>
+      </div>
+      <div class="obj-item" onclick="toggleObj(this)">
+        <div class="obj-trigger"><span class="obj-q">"We don't have budget right now"</span><span class="obj-chevron">▶</span></div>
+        <div class="obj-body"><p>"That makes sense. Most of our conversations aren't about budget right now — they're about understanding whether what you're running is going to scale with you. Is 20 minutes worth figuring that out?"</p></div>
+      </div>
+      <div class="obj-item" onclick="toggleObj(this)">
+        <div class="obj-trigger"><span class="obj-q">"Send me something"</span><span class="obj-chevron">▶</span></div>
+        <div class="obj-body"><p>"Happy to — I want to make sure I send something relevant. Quick question: what's the biggest pain in your current reporting or job tracking process?"</p></div>
+      </div>
+      <div class="obj-item" onclick="toggleObj(this)">
+        <div class="obj-trigger"><span class="obj-q">"We just implemented something"</span><span class="obj-chevron">▶</span></div>
+        <div class="obj-body"><p>"Got it — how long ago? The reason I ask is that a lot of companies hit limitations pretty quickly once complexity or location count picks up."</p></div>
+      </div>
+      <div class="obj-item" onclick="toggleObj(this)">
+        <div class="obj-trigger"><span class="obj-q">"We're too busy right now"</span><span class="obj-chevron">▶</span></div>
+        <div class="obj-body"><p>"I get it — this is a 20-minute call, not a project. What's making it so hectic? [Pause] That's usually exactly what we help with."</p></div>
+      </div>
+      <div class="obj-item" onclick="toggleObj(this)">
+        <div class="obj-trigger"><span class="obj-q">"I'm not the right person"</span><span class="obj-chevron">▶</span></div>
+        <div class="obj-body"><p>"No worries — who would be? And while I have you — what system is the finance team using today?"</p></div>
+      </div>
+      <div class="obj-item" onclick="toggleObj(this)">
+        <div class="obj-trigger"><span class="obj-q">"We went with a competitor"</span><span class="obj-chevron">▶</span></div>
+        <div class="obj-body"><p>"Congrats — who'd you go with? [Pause] How's it going so far? [Listen — circle back in 6–12 months]"</p></div>
+      </div>
+      <div class="obj-item" onclick="toggleObj(this)">
+        <div class="obj-trigger"><span class="obj-q">"Call me back next quarter"</span><span class="obj-chevron">▶</span></div>
+        <div class="obj-body"><p>"Happy to — I'll put it in the calendar. One question before I let you go: what would need to change by then for it to be worth a look?"</p></div>
+      </div>
+
+      <div class="obj-item" onclick="toggleObj(this)">
+        <div class="obj-trigger"><span class="obj-q">"Not interested"</span><span class="obj-chevron">▶</span></div>
+        <div class="obj-body">
+          <p><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CLARIFY</strong><br>"Totally fair — is that because it's bad timing, or you're already set with how you handle finance today?"</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">RESPOND</strong><br>"Got it. I'm not calling to pitch — I'm trying to see if this is even relevant."</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CTA</strong><br>"If I ask one quick question: how long does month-end close take right now?"</p>
+        </div>
+      </div>
+
+      <div class="obj-item" onclick="toggleObj(this)">
+        <div class="obj-trigger"><span class="obj-q">"Just send me info"</span><span class="obj-chevron">▶</span></div>
+        <div class="obj-body">
+          <p><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CLARIFY</strong><br>"Happy to — quick question so I send something useful: are you focused more on reporting, close speed, or multi-location complexity?"</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">RESPOND</strong><br>"Perfect. I'll send the short version — no fluff. I'll include one example from a similar team."</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CTA</strong><br>"If it's relevant, worth 15 minutes to compare notes next week?"</p>
+        </div>
+      </div>
+
+      <div class="obj-item" onclick="toggleObj(this)">
+        <div class="obj-trigger"><span class="obj-q">"No budget"</span><span class="obj-chevron">▶</span></div>
+        <div class="obj-body">
+          <p><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CLARIFY</strong><br>"Is it no budget at all, or just not allocated right now?"</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">RESPOND</strong><br>"Totally fair. Most teams justify it through time saved at close and less manual reporting."</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CTA</strong><br>"Worth a quick call to see if it would pay for itself?"</p>
+        </div>
+      </div>
+
+      <div class="obj-item" onclick="toggleObj(this)">
+        <div class="obj-trigger"><span class="obj-q">"We're too busy"</span><span class="obj-chevron">▶</span></div>
+        <div class="obj-body">
+          <p><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CLARIFY</strong><br>"Busy because of close, audit, or growth/fire drills?"</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">RESPOND</strong><br>"Totally get it — usually that's when systems start showing cracks."</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CTA</strong><br>"If I keep it to 12 minutes, worth seeing if there's a faster path?"</p>
+        </div>
+      </div>
+
+      <div class="obj-item" onclick="toggleObj(this)">
+        <div class="obj-trigger"><span class="obj-q">"QuickBooks works fine"</span><span class="obj-chevron">▶</span></div>
+        <div class="obj-body">
+          <p><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CLARIFY</strong><br>"How many locations/entities are you managing today?"</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">RESPOND</strong><br>"QuickBooks is solid early — it usually strains once reporting and close get more complex. Teams move when consolidated reporting becomes spreadsheet-heavy."</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CTA</strong><br>"Quick benchmark: how manual is reporting today?"</p>
+        </div>
+      </div>
+
+      <div class="obj-item" onclick="toggleObj(this)">
+        <div class="obj-trigger"><span class="obj-q">"We use NetSuite"</span><span class="obj-chevron">▶</span></div>
+        <div class="obj-body">
+          <p><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CLARIFY</strong><br>"Are you happy with reporting and agility today?"</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">RESPOND</strong><br>"Totally makes sense — teams only look elsewhere if something becomes painful. Usually it's admin overhead or reporting friction."</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CTA</strong><br>"If you could improve one thing, what would it be — reporting, close, or admin overhead?"</p>
+        </div>
+      </div>
+
+      <div class="obj-item" onclick="toggleObj(this)">
+        <div class="obj-trigger"><span class="obj-q">"We already have a system"</span><span class="obj-chevron">▶</span></div>
+        <div class="obj-body">
+          <p><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CLARIFY</strong><br>"What are you using today?"</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">RESPOND</strong><br>"Nice — then it's not 'replacement,' it's whether it still fits where you're headed. Growth usually exposes reporting and control gaps."</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CTA</strong><br>"How long does close take — and is it getting better or worse?"</p>
+        </div>
+      </div>
+
+      <div class="obj-item" onclick="toggleObj(this)">
+        <div class="obj-trigger"><span class="obj-q">"We're good with what we have"</span><span class="obj-chevron">▶</span></div>
+        <div class="obj-body">
+          <p><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CLARIFY</strong><br>"What part works best — close, reporting, or controls?"</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">RESPOND</strong><br>"Love hearing that — I'm only reaching out because teams usually feel that way right before growth adds friction."</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CTA</strong><br>"If you grow 25% this year, what breaks first?"</p>
+        </div>
+      </div>
+
+      <div class="obj-item" onclick="toggleObj(this)">
+        <div class="obj-trigger"><span class="obj-q">"We don't want to switch systems"</span><span class="obj-chevron">▶</span></div>
+        <div class="obj-body">
+          <p><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CLARIFY</strong><br>"Is the concern more risk, effort, or disruption?"</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">RESPOND</strong><br>"Totally valid — I wouldn't switch unless it was clearly worth it. There are staged approaches that reduce disruption."</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CTA</strong><br>"If nothing changes, what breaks first in the next 12 months?"</p>
+        </div>
+      </div>
+
+      <div class="obj-item" onclick="toggleObj(this)">
+        <div class="obj-trigger"><span class="obj-q">"Finance handles this"</span><span class="obj-chevron">▶</span></div>
+        <div class="obj-body">
+          <p><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CLARIFY</strong><br>"Totally — who in finance owns reporting and close improvements?"</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">RESPOND</strong><br>"Perfect, I'll connect with them. This affects close speed, controls, and visibility."</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CTA</strong><br>"Can you point me to the right person — Controller or CFO?"</p>
+        </div>
+      </div>
+
+      <div class="obj-item" onclick="toggleObj(this)">
+        <div class="obj-trigger"><span class="obj-q">"Not my department"</span><span class="obj-chevron">▶</span></div>
+        <div class="obj-body">
+          <p><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CLARIFY</strong><br>"Who usually owns this — finance leadership or ops finance?"</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">RESPOND</strong><br>"Totally fair — I'll contact the right team. This decision is usually driven by reporting and close pain."</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CTA</strong><br>"Who's best — Controller or CFO?"</p>
+        </div>
+      </div>
+
+      <div class="obj-item" onclick="toggleObj(this)">
+        <div class="obj-trigger"><span class="obj-q">"We're in the middle of something"</span><span class="obj-chevron">▶</span></div>
+        <div class="obj-body">
+          <p><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CLARIFY</strong><br>"Implementation, audit, acquisition, or growth project?"</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">RESPOND</strong><br>"Totally fair — I don't want to add noise. Teams often plan the next step while they're mid-project."</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CTA</strong><br>"Should I reconnect right after it wraps, or 2–3 weeks before?"</p>
+        </div>
+      </div>
+
+      <div class="obj-item" onclick="toggleObj(this)">
+        <div class="obj-trigger"><span class="obj-q">"Not looking right now"</span><span class="obj-chevron">▶</span></div>
+        <div class="obj-body">
+          <p><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CLARIFY</strong><br>"Is it because things are stable, or priorities are elsewhere?"</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">RESPOND</strong><br>"Got it — I'm not trying to force timing. Teams start planning when close/reporting starts slowing decisions."</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CTA</strong><br>"What would need to change for it to be worth looking?"</p>
+        </div>
+      </div>
+
+      <div class="obj-item" onclick="toggleObj(this)">
+        <div class="obj-trigger"><span class="obj-q">"Too expensive"</span><span class="obj-chevron">▶</span></div>
+        <div class="obj-body">
+          <p><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CLARIFY</strong><br>"Compared to what — cost today, effort, or risk?"</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">RESPOND</strong><br>"Totally fair — the goal is usually to reduce manual reporting and speed close. Most teams justify this by getting time back and fewer errors."</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CTA</strong><br>"If we could reduce close time by 30–50%, worth benchmarking?"</p>
+        </div>
+      </div>
+
+      <div class="obj-item" onclick="toggleObj(this)">
+        <div class="obj-trigger"><span class="obj-q">"I don't take cold calls"</span><span class="obj-chevron">▶</span></div>
+        <div class="obj-body">
+          <p><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CLARIFY</strong><br>"Fair — do you prefer email, or should I reach out to someone else?"</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">RESPOND</strong><br>"I'll be brief — the reason I called is we see teams hit reporting/close limits as they grow. I'm only trying to confirm whether that's happening there."</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CTA</strong><br>"If I send 3 bullets, would you take a look?"</p>
+        </div>
+      </div>
+
+      <div class="obj-item" onclick="toggleObj(this)">
+        <div class="obj-trigger"><span class="obj-q">"Just email me"</span><span class="obj-chevron">▶</span></div>
+        <div class="obj-body">
+          <p><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CLARIFY</strong><br>"Perfect — should I anchor it to reporting, close speed, or multi-location visibility?"</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">RESPOND</strong><br>"Got it — I'll send the short version. One relevant example, not a deck."</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CTA</strong><br>"If it looks relevant, is 15 minutes next week crazy?"</p>
+        </div>
+      </div>
+
+      <div class="obj-item" onclick="toggleObj(this)">
+        <div class="obj-trigger"><span class="obj-q">"We're locked into a contract"</span><span class="obj-chevron">▶</span></div>
+        <div class="obj-body">
+          <p><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CLARIFY</strong><br>"When does renewal come up?"</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">RESPOND</strong><br>"Got it — then this is a planning conversation, not a switch today. Teams often benchmark options 60–90 days before renewal."</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CTA</strong><br>"Want to baseline now so you're not rushed later?"</p>
+        </div>
+      </div>
+
+      <div class="obj-item" onclick="toggleObj(this)">
+        <div class="obj-trigger"><span class="obj-q">"We're a small team"</span><span class="obj-chevron">▶</span></div>
+        <div class="obj-body">
+          <p><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CLARIFY</strong><br>"How many people touch close and reporting today?"</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">RESPOND</strong><br>"Exactly — small teams need systems that remove manual effort. Wins are time back and fewer errors."</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CTA</strong><br>"If you could eliminate one manual process, what would it be?"</p>
+        </div>
+      </div>
+
+      <div class="obj-item" onclick="toggleObj(this)">
+        <div class="obj-trigger"><span class="obj-q">"We don't have that problem"</span><span class="obj-chevron">▶</span></div>
+        <div class="obj-body">
+          <p><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CLARIFY</strong><br>"Just to sanity check — how long does close take today?"</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">RESPOND</strong><br>"Nice — then you're ahead of most teams. Pain usually shows up with growth or new entities."</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CTA</strong><br>"If you grow 25% this year, what breaks first?"</p>
+        </div>
+      </div>
+
+      <div class="obj-item" onclick="toggleObj(this)">
+        <div class="obj-trigger"><span class="obj-q">"We evaluated this before"</span><span class="obj-chevron">▶</span></div>
+        <div class="obj-body">
+          <p><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CLARIFY</strong><br>"What ruled it out last time — timing, cost, fit, or complexity?"</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">RESPOND</strong><br>"Helpful — things may have changed since then. Pain grows as reporting and close complexity increases."</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CTA</strong><br>"Worth a quick revisit if your needs changed?"</p>
+        </div>
+      </div>
+
+      <div class="obj-item" onclick="toggleObj(this)">
+        <div class="obj-trigger"><span class="obj-q">"We outsource finance"</span><span class="obj-chevron">▶</span></div>
+        <div class="obj-body">
+          <p><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CLARIFY</strong><br>"Do they handle reporting too — or mainly bookkeeping/tax?"</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">RESPOND</strong><br>"Got it — the pain usually shows up when leadership needs faster insight. Most teams still need location/entity visibility internally."</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CTA</strong><br>"How quickly can you get location-level performance today?"</p>
+        </div>
+      </div>
+
+      <div class="obj-item" onclick="toggleObj(this)">
+        <div class="obj-trigger"><span class="obj-q">"Talk to me when it's urgent"</span><span class="obj-chevron">▶</span></div>
+        <div class="obj-body">
+          <p><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CLARIFY</strong><br>"What makes it urgent — audit issues, close delays, or reporting pressure?"</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">RESPOND</strong><br>"Totally fair — urgency is when it hurts. Best planning happens slightly before the breaking point."</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CTA</strong><br>"What would need to happen for this to move up the list?"</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- CLOSE -->
+    <div class="section-block" id="sec-close">
+      <div class="panel-header">
+        <span class="panel-stepnum">STEP 5</span>
+        <span class="panel-title">Close for Time</span>
+        <span class="panel-hint">🎯 Ask for the meeting — be specific. Ask, then stop talking.</span>
+      </div>
+
+      <div class="script-card">
+        <div class="card-top">
+          <span class="card-tag tag-close">✅ PRIMARY CLOSE</span>
+          <span class="card-script">"Based on what you're describing, this is exactly what we help with. Would <em>[DAY]</em> at <em>[TIME]</em> work for a 20-minute conversation to dig into this?"</span>
+        </div>
+        <div class="card-note">Use after confirmed pain.</div>
+      </div>
+      <div class="script-card">
+        <div class="card-top">
+          <span class="card-tag tag-flex">SOFT CLOSE</span>
+          <span class="card-script">"I'm not asking you to commit to anything — just 20 minutes to see if there's a fit. Worst case, you get a clear picture of what's possible. Does <em>[DAY]</em> work?"</span>
+        </div>
+        <div class="card-note">Use when they hedge.</div>
+      </div>
+      <div class="script-card">
+        <div class="card-top">
+          <span class="card-tag tag-flex">FALLBACK</span>
+          <span class="card-script">"Totally fine. Can I send you a quick 2-minute overview and follow up <em>[DAY]</em>? That way you can see if it's even worth the conversation."</span>
+        </div>
+        <div class="card-note">Last resort — still get a next step.</div>
+      </div>
+      <div class="script-card">
+        <div class="card-top">
+          <span class="card-tag tag-flex">📱 VOICEMAIL</span>
+          <span class="card-script">"Hi <em>[NAME]</em>, this is <em>[YOUR NAME]</em> with Sage Intacct. I work with <em>[industry]</em> CFOs and Controllers who are managing <em>[job profitability / multi-location reporting]</em> without the right system behind them. I'd love 15 minutes to see if we can help — I'll shoot you an email too. My number is <em>[NUMBER]</em>."</span>
+        </div>
+        <div class="card-note">Leave this — then email immediately.</div>
+      </div>
+    </div>
+
+    <!-- BANT -->
+    <div class="section-block" id="sec-bant">
+      <div class="panel-header">
+        <span class="panel-stepnum">BANT</span>
+        <span class="panel-title">Qualification Framework</span>
+        <span class="panel-hint">Work B → A → N → T in order. One question per category.</span>
+      </div>
+      <div class="bant-grid">
+        <div class="bant-card">
+          <div class="bant-letter">B — BUDGET</div>
+          <div class="bant-qs">
+            <div class="bant-q star">⭐ "How is your finance technology budget structured — does that sit with you or is there a separate process for systems like this?"</div>
+            <div class="bant-q">"When your company has evaluated new systems in the past, what did that process look like?"</div>
+            <div class="bant-q">"Is there a fiscal year cycle we should be mindful of — when do budgets typically get approved?"</div>
+            <div class="bant-q">"A lot of companies fund this through operational savings — has your team explored that angle?"</div>
+          </div>
+        </div>
+        <div class="bant-card">
+          <div class="bant-letter">A — AUTHORITY</div>
+          <div class="bant-qs">
+            <div class="bant-q star">⭐ "If you saw something that made sense here — what would the decision process look like at your company?"</div>
+            <div class="bant-q">"Who else on your team would need to weigh in — IT, ownership, the board?"</div>
+            <div class="bant-q">"Have you evaluated or switched financial systems before? What did that process look like?"</div>
+            <div class="bant-q">"Is there an owner or executive who's been pushing for better financial visibility?"</div>
+          </div>
+        </div>
+        <div class="bant-card">
+          <div class="bant-letter">N — NEED</div>
+          <div class="bant-qs">
+            <div class="bant-q star">⭐ "Where does your current process tend to break down — especially around job profitability or closing the books?"</div>
+            <div class="bant-q">"How are you tracking profitability at the job, route, or location level today?"</div>
+            <div class="bant-q">"What does month-end close look like — how much manual work goes into pulling it together?"</div>
+            <div class="bant-q">"When ownership or leadership asks for a financial snapshot, how long does it take to produce?"</div>
+          </div>
+        </div>
+        <div class="bant-card">
+          <div class="bant-letter">T — TIMELINE</div>
+          <div class="bant-qs">
+            <div class="bant-q star">⭐ "Is there a specific event driving this — a new hire, year-end, new entity, audit?"</div>
+            <div class="bant-q">"If you decided to move forward, when would you ideally want to be live on a new system?"</div>
+            <div class="bant-q">"Are there any contracts or renewal dates with your current system we should know about?"</div>
+            <div class="bant-q">"What would need to be true for your team to prioritize this in the next 90 days?"</div>
+          </div>
+        </div>
+      </div>
+      <div class="scorecard" style="margin-top:4px;">
+        <div class="score-item score-pass"><span class="score-dot dot-pass"></span>✅ QUALIFIED → pass to AE: Budget identified + Decision maker engaged + Clear pain + Timeline &lt; 6 months</div>
+        <div class="score-item score-nurture"><span class="score-dot dot-nurture"></span>🟡 DEVELOPING → nurture: 1–2 BANT criteria confirmed. Missing budget clarity or no compelling event.</div>
+        <div class="score-item score-disq"><span class="score-dot dot-disq"></span>🔴 DISQUALIFY → move on: No pain, no budget path, no authority access, or 12+ month timeline with no event.</div>
+      </div>
+    </div>
+
+    <!-- SPIV -->
+    <div class="section-block" id="sec-spiv">
+      <div class="panel-header">
+        <span class="panel-stepnum">SPIV</span>
+        <span class="panel-title">Discovery Deepeners</span>
+        <span class="panel-hint">Use AFTER the prospect is talking. BANT qualifies. SPIV builds urgency.</span>
+      </div>
+      <div class="bant-grid">
+        <div class="bant-card">
+          <div class="bant-letter" style="color:var(--text-mid);">S — SITUATION</div>
+          <div class="bant-qs">
+            <div class="bant-q star">⭐ "What system are you running today for your financials, and how long have you been on it?"</div>
+            <div class="bant-q">"How is your finance team structured — how many people are managing the books?"</div>
+            <div class="bant-q">"How many locations, entities, or job types are you managing at any given time?"</div>
+            <div class="bant-q">"Do you operate as a single entity or do you have multiple LLCs or entities to consolidate?"</div>
+          </div>
+        </div>
+        <div class="bant-card">
+          <div class="bant-letter" style="color:var(--danger);">P — PAIN</div>
+          <div class="bant-qs">
+            <div class="bant-q star">⭐ "Where does your current process tend to break down — especially around job profitability or reporting?"</div>
+            <div class="bant-q">"How are you tracking profitability at the job, route, or unit level today?"</div>
+            <div class="bant-q">"Are there parts of your reporting still in Excel even though you have a system?"</div>
+          </div>
+        </div>
+        <div class="bant-card">
+          <div class="bant-letter" style="color:var(--warn);">I — IMPLICATION</div>
+          <div class="bant-qs">
+            <div class="bant-q star">⭐ "What happens when that reporting isn't ready on time — with ownership or leadership?"</div>
+            <div class="bant-q">"How much time does your team spend each month pulling data together vs. actually analyzing it?"</div>
+            <div class="bant-q">"As you grow — more locations, more complexity — how does your current system scale with that?"</div>
+          </div>
+        </div>
+        <div class="bant-card">
+          <div class="bant-letter" style="color:var(--accent);">V — VISION</div>
+          <div class="bant-qs">
+            <div class="bant-q star">⭐ "If that reporting was automated and available any time — what would that change for your team?"</div>
+            <div class="bant-q">"What would it mean for your team if close went from two weeks to two days?"</div>
+            <div class="bant-q">"If finance had the tools to scale without adding headcount — what does that make possible?"</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INDUSTRY DISCOVERY: LODGING -->
+    <div class="section-block" id="sec-disc-lodging">
+      <div class="panel-header">
+        <span class="panel-stepnum" style="background:var(--accent2-dim);color:var(--accent2);">🏨 DEEP DISC</span>
+        <span class="panel-title">Lodging KPI Discovery</span>
+        <span class="panel-hint">Use when prospect is in hotels / hospitality — go deeper than SPIV</span>
+      </div>
+
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:9px 13px;margin-bottom:4px;">
+        <span style="font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:0.1em;text-transform:uppercase;">The simple story: </span>
+        <span style="font-size:11px;color:var(--text-mid);">Hotels don't lose money because they don't track metrics. They lose money because they can't see what's driving the metrics fast enough to act.</span>
+      </div>
+
+      <!-- RevPAR -->
+      <div class="disc-kpi-card" id="kpi-revpar">
+        <div class="disc-kpi-header" onclick="toggleKpi('kpi-revpar')">
+          <span class="disc-kpi-label" style="background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent);">RevPAR</span>
+          <span class="disc-kpi-title">Revenue per Available Room</span>
+          <span style="font-size:10px;color:var(--text-dim);margin-right:8px;">Rate · Occupancy · Channel Mix</span>
+          <span class="disc-kpi-chevron">▶</span>
+        </div>
+        <div class="disc-kpi-body">
+          <div style="font-size:11px;color:var(--text-dim);background:var(--surface2);border-radius:4px;padding:8px 10px;margin-bottom:10px;line-height:1.55;">RevPAR tells you how well you're monetizing rooms overall. If RevPAR drops, the business can quietly bleed revenue even if "occupancy looks okay." Helps leadership answer: <em>"Are we underpricing, under-filling, or losing the right guests to the wrong channels?"</em></div>
+          <div class="disc-sub-title" style="color:var(--accent2);">Discovery Questions</div>
+          <div class="disc-q">"When RevPAR dips, can you quickly tell whether it's rate, occupancy, channel mix, or comping/discounting driving it?"</div>
+          <div class="disc-q">"Do you break RevPAR down by property, room type, day-of-week, and booking source — or is it mostly a single blended number?"</div>
+          <div class="disc-q">"How long does it take to identify which segment caused a miss and take action — same day, same week, or after month-end?"</div>
+          <div class="disc-q">"If you had RevPAR by segment with margins, what's the first decision you'd make differently?"</div>
+          <div class="disc-sub-title" style="color:var(--accent);">✅ Good Pain Signals</div>
+          <div class="disc-pain-item">"We don't know if it's rate or occupancy causing the drop."</div>
+          <div class="disc-pain-item">"We only look at a blended RevPAR — no breakdown by channel or room type."</div>
+          <div class="disc-pain-item">"We realize the miss after month-end… too late to fix."</div>
+          <div class="disc-pain-item">"OTAs are filling rooms, but profit isn't improving."</div>
+          <div class="disc-sub-title" style="color:var(--accent2);">How Intacct Adds Value</div>
+          <div class="disc-value-item">Dimensional reporting: RevPAR by property / channel / segment / room class / weekday vs weekend</div>
+          <div class="disc-value-item">Finance answers "what's driving the dip" without spreadsheets</div>
+          <div class="disc-value-item">Turns RevPAR from a static number into an actionable lever</div>
+          <div class="disc-cta"><strong>🏁 CTA</strong>"If we could break RevPAR down by channel + room type + day-of-week and show the profit impact, would it be worth 15 minutes to see what decisions you could change immediately?"</div>
+          <div class="disc-wedge-note">⚡ Intacct wedge: dimensional reporting (property / segment / channel / room class) so finance becomes an operator.</div>
+        </div>
+      </div>
+
+      <!-- ADR -->
+      <div class="disc-kpi-card" id="kpi-adr">
+        <div class="disc-kpi-header" onclick="toggleKpi('kpi-adr')">
+          <span class="disc-kpi-label" style="background:var(--accent2-dim);color:var(--accent2);border:1px solid var(--accent2);">ADR</span>
+          <span class="disc-kpi-title">Average Daily Rate</span>
+          <span style="font-size:10px;color:var(--text-dim);margin-right:8px;">Pricing · Discounting · Net Revenue</span>
+          <span class="disc-kpi-chevron">▶</span>
+        </div>
+        <div class="disc-kpi-body">
+          <div style="font-size:11px;color:var(--text-dim);background:var(--surface2);border-radius:4px;padding:8px 10px;margin-bottom:10px;line-height:1.55;">ADR tells you how strong your pricing is — but ADR alone can be misleading because it doesn't show discounting behavior or true profitability after fees. Helps answer: <em>"Are we pricing smart… or just filling rooms at a discount?"</em></div>
+          <div class="disc-sub-title" style="color:var(--accent2);">Discovery Questions</div>
+          <div class="disc-q">"Are you tracking ADR alongside discount reasons and rate overrides — and can you see how that impacts profitability, not just top-line?"</div>
+          <div class="disc-q">"Where do rate decisions happen, and does finance have a way to validate whether ADR changes are creating real profit improvement?"</div>
+          <div class="disc-q">"Can you model ADR strategy impacts by channel (direct vs OTA) and compare net ADR after fees?"</div>
+          <div class="disc-q" style="border-left-color:var(--warn);background:var(--warn-dim);color:var(--text);">⚡ Killer follow-up: "When you look at OTAs, do you track revenue — or do you track <em>net revenue</em> after fees?" (Separates teams that measure activity from teams that measure profit.)</div>
+          <div class="disc-sub-title" style="color:var(--accent);">✅ Good Pain Signals</div>
+          <div class="disc-pain-item">"We're increasing ADR but profit isn't moving."</div>
+          <div class="disc-pain-item">"Discounting happens and finance finds out later."</div>
+          <div class="disc-pain-item">"Rate overrides aren't tracked consistently."</div>
+          <div class="disc-pain-item">"We don't know net ADR after OTA fees."</div>
+          <div class="disc-sub-title" style="color:var(--accent2);">How Intacct Adds Value</div>
+          <div class="disc-value-item">Tracks revenue in a way that supports net revenue visibility (after fees/commissions)</div>
+          <div class="disc-value-item">Ties ADR strategy to profit outcomes, not just top-line</div>
+          <div class="disc-value-item">Validates whether "higher ADR" is real improvement or artificial</div>
+          <div class="disc-cta"><strong>🏁 CTA</strong>"If we could show you ADR changes alongside discounting + net revenue after fees, would it be worth a quick call to see where pricing is helping — or quietly hurting margin?"</div>
+          <div class="disc-wedge-note">⚡ Intacct wedge: net revenue visibility and channel-level profitability tracking.</div>
+        </div>
+      </div>
+
+      <!-- TRevPAR -->
+      <div class="disc-kpi-card" id="kpi-trevpar">
+        <div class="disc-kpi-header" onclick="toggleKpi('kpi-trevpar')">
+          <span class="disc-kpi-label" style="background:var(--warn-dim);color:var(--warn);border:1px solid var(--warn);">TRevPAR</span>
+          <span class="disc-kpi-title">Total Revenue per Available Room</span>
+          <span style="font-size:10px;color:var(--text-dim);margin-right:8px;">F&amp;B · Ancillary · Cross-Dept Attribution</span>
+          <span class="disc-kpi-chevron">▶</span>
+        </div>
+        <div class="disc-kpi-body">
+          <div style="font-size:11px;color:var(--text-dim);background:var(--surface2);border-radius:4px;padding:8px 10px;margin-bottom:10px;line-height:1.55;">TRevPAR is the "full business" metric — shows whether the property is winning beyond rooms (F&amp;B, parking, events, amenities). Helps answer: <em>"Are guests actually spending once they arrive… or are we leaving money on the table?"</em></div>
+          <div class="disc-sub-title" style="color:var(--accent2);">Discovery Questions</div>
+          <div class="disc-q">"When TRevPAR changes, can you attribute it to rooms vs F&amp;B vs ancillary — and see which stream is carrying the property?"</div>
+          <div class="disc-q">"Do you have a clean way to connect guest spend behavior to the booking channel or guest profile?"</div>
+          <div class="disc-q">"How confident are you that cross-department revenue is being attributed correctly across outlets and entities?"</div>
+          <div class="disc-sub-title" style="color:var(--accent);">✅ Good Pain Signals</div>
+          <div class="disc-pain-item">"Rooms are strong but F&amp;B is inconsistent."</div>
+          <div class="disc-pain-item">"We don't know what revenue stream is carrying the property."</div>
+          <div class="disc-pain-item">"We can't connect guest spend to booking type (direct vs OTA)."</div>
+          <div class="disc-pain-item">"Cross-department revenue attribution is messy."</div>
+          <div class="disc-sub-title" style="color:var(--accent2);">How Intacct Adds Value</div>
+          <div class="disc-value-item">Consolidates revenue streams across departments into one clean view</div>
+          <div class="disc-value-item">Supports multi-department attribution so numbers tie out without manual work</div>
+          <div class="disc-value-item">Enables leadership to see what drives total guest value, not just room revenue</div>
+          <div class="disc-cta"><strong>🏁 CTA</strong>"If we could show TRevPAR broken into rooms vs F&amp;B vs ancillary and highlight what's driving the gains, would it be worth 15 minutes to map where profitability is actually coming from?"</div>
+          <div class="disc-wedge-note">⚡ Intacct wedge: multi-department attribution + consolidated reporting across revenue streams.</div>
+        </div>
+      </div>
+
+      <!-- GOPPAR -->
+      <div class="disc-kpi-card" id="kpi-goppar">
+        <div class="disc-kpi-header" onclick="toggleKpi('kpi-goppar')">
+          <span class="disc-kpi-label" style="background:var(--danger-dim);color:var(--danger);border:1px solid var(--danger);">GOPPAR</span>
+          <span class="disc-kpi-title">Gross Operating Profit per Available Room</span>
+          <span style="font-size:10px;color:var(--text-dim);margin-right:8px;">Labor · Spend · Vendor Leakage</span>
+          <span class="disc-kpi-chevron">▶</span>
+        </div>
+        <div class="disc-kpi-body">
+          <div style="font-size:11px;color:var(--text-dim);background:var(--surface2);border-radius:4px;padding:8px 10px;margin-bottom:10px;line-height:1.55;">GOPPAR tells you profit per available room after operating expenses. RevPAR can look good while GOPPAR suffers — meaning you're busy, but costs are out of control.</div>
+          <div class="disc-sub-title" style="color:var(--accent2);">Discovery Questions</div>
+          <div class="disc-q">"When GOPPAR falls, can you pinpoint the driver fast — labor, food cost, maintenance, utilities, OTA fees, or procurement variance?"</div>
+          <div class="disc-q">"Are you measuring GOPPAR by property and also by department/outlet, or does it stop at the property level?"</div>
+          <div class="disc-q">"Do managers see GOPPAR early enough to react, or is this mostly visible after the month closes?"</div>
+          <div class="disc-q">"If you could drill from GOPPAR → expense category → vendor → purchase patterns, where do you suspect the biggest leak is?"</div>
+          <div class="disc-sub-title" style="color:var(--accent);">✅ Good Pain Signals</div>
+          <div class="disc-pain-item">"We don't know what expense is killing profit."</div>
+          <div class="disc-pain-item">"We can't see GOPPAR by department/outlet."</div>
+          <div class="disc-pain-item">"We find margin issues after the month closes."</div>
+          <div class="disc-pain-item">"Vendor costs creep and nobody catches it fast."</div>
+          <div class="disc-sub-title" style="color:var(--accent2);">How Intacct Adds Value</div>
+          <div class="disc-value-item">Drill-down profitability: GOPPAR → expense category → vendor → transactions</div>
+          <div class="disc-value-item">Multi-entity/location reporting to compare properties side-by-side</div>
+          <div class="disc-value-item">Strong AP visibility + controls to reduce spend leakage</div>
+          <div class="disc-value-item">Helps managers act mid-month, not "after close"</div>
+          <div class="disc-cta"><strong>🏁 CTA</strong>"If we could show GOPPAR drivers by labor, utilities, maintenance, and vendor spend — and make it visible early enough to act — would it be worth 15 minutes to see where your profit leaks are hiding?"</div>
+          <div class="disc-wedge-note">⚡ Intacct wedge: drill-down profitability + spend governance (AP + dimensions + vendor analytics).</div>
+        </div>
+      </div>
+
+      <!-- Direct Booking Ratio -->
+      <div class="disc-kpi-card" id="kpi-direct">
+        <div class="disc-kpi-header" onclick="toggleKpi('kpi-direct')">
+          <span class="disc-kpi-label" style="background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent);">DIRECT</span>
+          <span class="disc-kpi-title">Direct Booking Ratio / Channel CPA</span>
+          <span style="font-size:10px;color:var(--text-dim);margin-right:8px;">OTA Fees · Net Margin · Channel Mix</span>
+          <span class="disc-kpi-chevron">▶</span>
+        </div>
+        <div class="disc-kpi-body">
+          <div style="font-size:11px;color:var(--text-dim);background:var(--surface2);border-radius:4px;padding:8px 10px;margin-bottom:10px;line-height:1.55;">Direct booking ratio shows how many bookings come straight from guests vs through OTAs. OTAs often take 15–25% in fees — so you can be busy but less profitable. Helps answer: <em>"Are we winning the right bookings — or paying too much to get them?"</em></div>
+          <div class="disc-sub-title" style="color:var(--accent2);">Discovery Questions</div>
+          <div class="disc-q">"What's your current direct booking ratio, and do you know how much margin you give up through OTAs after fees?"</div>
+          <div class="disc-q">"Do you track direct vs OTA performance by property, season, and campaign — or is that data living in different systems?"</div>
+          <div class="disc-q">"If you increased direct bookings by 5%, do you know what that would do to profit, not just revenue?"</div>
+          <div class="disc-q" style="border-left-color:var(--warn);background:var(--warn-dim);color:var(--text);">⚡ Killer question: "When you look at OTAs, do you track revenue… or <em>net revenue</em> after fees?" — separates teams that measure activity from teams that measure profit.</div>
+          <div class="disc-sub-title" style="color:var(--accent);">✅ Good Pain Signals</div>
+          <div class="disc-pain-item">"OTAs are filling rooms, but profit isn't improving."</div>
+          <div class="disc-pain-item">"We don't know our true margin after fees."</div>
+          <div class="disc-pain-item">"Marketing says campaigns are working, but finance can't tie it to profit."</div>
+          <div class="disc-pain-item">"Our data lives in different systems so it's hard to compare apples-to-apples."</div>
+          <div class="disc-pain-item">"We don't know what a 5% direct booking lift would do to EBITDA."</div>
+          <div class="disc-sub-title" style="color:var(--accent2);">How Intacct Adds Value</div>
+          <div class="disc-value-item">Net revenue reporting: shows what you actually keep after OTA commissions and fees</div>
+          <div class="disc-value-item">Channel-level margin transparency: direct vs OTA by property / season / campaign</div>
+          <div class="disc-value-item">Helps identify which properties are overly OTA-dependent</div>
+          <div class="disc-value-item">Finance can answer "which channel is profitable?" without waiting for month-end</div>
+          <div class="disc-cta"><strong>🏁 CTA</strong>"If we could show you direct vs OTA performance with net margin after fees — by property and season — and quantify what a 5% lift in direct bookings does to profit, would it be worth a quick 15-minute call?"</div>
+          <div class="disc-wedge-note">⚡ Intacct wedge: net revenue reporting + channel-level margin transparency.</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- INDUSTRY DISCOVERY: TRUCKING -->
+    <div class="section-block" id="sec-disc-trucking">
+      <div class="panel-header">
+        <span class="panel-stepnum" style="background:var(--accent2-dim);color:var(--accent2);">🚛 DEEP DISC</span>
+        <span class="panel-title">Trucking &amp; Transportation Discovery</span>
+        <span class="panel-hint">3 core motions — pick the one that fits the conversation</span>
+      </div>
+
+      <div class="disc-kpi-card" id="trk-1">
+        <div class="disc-kpi-header" onclick="toggleKpi('trk-1')">
+          <span class="disc-kpi-label" style="background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent);">MOTION 1</span>
+          <span class="disc-kpi-title">Load / Lane Profitability</span>
+          <span class="disc-kpi-chevron">▶</span>
+        </div>
+        <div class="disc-kpi-body">
+          <div class="disc-sub-title" style="color:var(--accent2);">Discovery Questions</div>
+          <div class="disc-q">"When a load underperforms, how do you isolate whether it was fuel cost, deadhead miles, detention time, or pricing that drove the margin down?"</div>
+          <div class="disc-q">"Are you able to see profitability by lane, customer, and driver in real time — or is that something you reconcile after delivery?"</div>
+          <div class="disc-q">"How quickly can you identify and correct an unprofitable lane before it impacts overall margins?"</div>
+          <div class="disc-sub-title" style="color:var(--accent);">✅ Good Pain Signals</div>
+          <div class="disc-pain-item">"We know some lanes lose money, but we're not sure which ones."</div>
+          <div class="disc-pain-item">"We only see profitability after the load is done."</div>
+          <div class="disc-pain-item">"Margins feel inconsistent and hard to predict."</div>
+        </div>
+      </div>
+
+      <div class="disc-kpi-card" id="trk-2">
+        <div class="disc-kpi-header" onclick="toggleKpi('trk-2')">
+          <span class="disc-kpi-label" style="background:var(--warn-dim);color:var(--warn);border:1px solid var(--warn);">MOTION 2</span>
+          <span class="disc-kpi-title">⛽ Cost Volatility</span>
+          <span class="disc-kpi-chevron">▶</span>
+        </div>
+        <div class="disc-kpi-body">
+          <div class="disc-sub-title" style="color:var(--accent2);">Discovery Questions</div>
+          <div class="disc-q">"How do you track fluctuating costs like fuel and maintenance against each load or route?"</div>
+          <div class="disc-q">"Do those costs get allocated accurately to specific jobs, or do they sit at a high level?"</div>
+          <div class="disc-q">"When costs spike, how quickly can you adjust pricing or operations to protect margin?"</div>
+          <div class="disc-sub-title" style="color:var(--accent);">✅ Good Pain Signals</div>
+          <div class="disc-pain-item">"Fuel kills us, but we don't track it per load."</div>
+          <div class="disc-pain-item">"Costs are rising faster than we can react."</div>
+          <div class="disc-pain-item">"We feel margin pressure but can't pinpoint why."</div>
+        </div>
+      </div>
+
+      <div class="disc-kpi-card" id="trk-3">
+        <div class="disc-kpi-header" onclick="toggleKpi('trk-3')">
+          <span class="disc-kpi-label" style="background:var(--accent2-dim);color:var(--accent2);border:1px solid var(--accent2);">MOTION 3</span>
+          <span class="disc-kpi-title">Fleet &amp; Driver Utilization</span>
+          <span class="disc-kpi-chevron">▶</span>
+        </div>
+        <div class="disc-kpi-body">
+          <div class="disc-sub-title" style="color:var(--accent2);">Discovery Questions</div>
+          <div class="disc-q">"How are you measuring driver utilization and idle time across your fleet?"</div>
+          <div class="disc-q">"Can you tie utilization directly to revenue and profitability per driver or asset?"</div>
+          <div class="disc-q">"If utilization drops, how quickly can you identify where capacity is being underused?"</div>
+          <div class="disc-sub-title" style="color:var(--accent);">✅ Good Pain Signals</div>
+          <div class="disc-pain-item">"Some drivers are busy, others aren't — we don't know why."</div>
+          <div class="disc-pain-item">"We don't have a clear view of idle time."</div>
+          <div class="disc-pain-item">"We know we could be more efficient, just not where."</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INDUSTRY DISCOVERY: CAR WASHES -->
+    <div class="section-block" id="sec-disc-carwash">
+      <div class="panel-header">
+        <span class="panel-stepnum" style="background:var(--accent2-dim);color:var(--accent2);">🚗 DEEP DISC</span>
+        <span class="panel-title">Car Wash Discovery</span>
+        <span class="panel-hint">3 core motions — pick the one that fits the conversation</span>
+      </div>
+
+      <div class="disc-kpi-card" id="cw-1">
+        <div class="disc-kpi-header" onclick="toggleKpi('cw-1')">
+          <span class="disc-kpi-label" style="background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent);">MOTION 1</span>
+          <span class="disc-kpi-title">Location Profitability</span>
+          <span class="disc-kpi-chevron">▶</span>
+        </div>
+        <div class="disc-kpi-body">
+          <div class="disc-sub-title" style="color:var(--accent2);">Discovery Questions</div>
+          <div class="disc-q">"When one location outperforms another, how do you determine if it's volume, pricing, labor, or cost efficiency?"</div>
+          <div class="disc-q">"Are you seeing full P&amp;L by location in real time, or mostly after month-end?"</div>
+          <div class="disc-q">"How quickly can you act on an underperforming location?"</div>
+          <div class="disc-sub-title" style="color:var(--accent);">✅ Good Pain Signals</div>
+          <div class="disc-pain-item">"Some locations do great, others don't — we can't explain it."</div>
+          <div class="disc-pain-item">"We look at revenue, not full profitability."</div>
+          <div class="disc-pain-item">"We realize issues after the fact."</div>
+        </div>
+      </div>
+
+      <div class="disc-kpi-card" id="cw-2">
+        <div class="disc-kpi-header" onclick="toggleKpi('cw-2')">
+          <span class="disc-kpi-label" style="background:var(--warn-dim);color:var(--warn);border:1px solid var(--warn);">MOTION 2</span>
+          <span class="disc-kpi-title">💳 Membership Economics</span>
+          <span class="disc-kpi-chevron">▶</span>
+        </div>
+        <div class="disc-kpi-body">
+          <div class="disc-sub-title" style="color:var(--accent2);">Discovery Questions</div>
+          <div class="disc-q">"How do you evaluate whether your membership base is actually increasing profitability versus just volume?"</div>
+          <div class="disc-q">"Can you connect usage frequency to cost per visit and margin?"</div>
+          <div class="disc-q">"If usage patterns shift, how quickly can you identify impact?"</div>
+          <div class="disc-sub-title" style="color:var(--accent);">✅ Good Pain Signals</div>
+          <div class="disc-pain-item">"Memberships are up but profit isn't."</div>
+          <div class="disc-pain-item">"Heavy users might be costing us money."</div>
+          <div class="disc-pain-item">"We don't know the true value of a member."</div>
+        </div>
+      </div>
+
+      <div class="disc-kpi-card" id="cw-3">
+        <div class="disc-kpi-header" onclick="toggleKpi('cw-3')">
+          <span class="disc-kpi-label" style="background:var(--accent2-dim);color:var(--accent2);border:1px solid var(--accent2);">MOTION 3</span>
+          <span class="disc-kpi-title">Cost Control</span>
+          <span class="disc-kpi-chevron">▶</span>
+        </div>
+        <div class="disc-kpi-body">
+          <div class="disc-sub-title" style="color:var(--accent2);">Discovery Questions</div>
+          <div class="disc-q">"How do you track chemical, labor, and maintenance costs across locations?"</div>
+          <div class="disc-q">"Are those costs tied directly to revenue performance?"</div>
+          <div class="disc-q">"When costs creep up, how quickly can you pinpoint the driver?"</div>
+          <div class="disc-sub-title" style="color:var(--accent);">✅ Good Pain Signals</div>
+          <div class="disc-pain-item">"Costs creep up and we don't catch it early."</div>
+          <div class="disc-pain-item">"We don't know what's driving expenses."</div>
+          <div class="disc-pain-item">"Margins feel tighter but unclear why."</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INDUSTRY DISCOVERY: LANDSCAPING -->
+    <div class="section-block" id="sec-disc-landscaping">
+      <div class="panel-header">
+        <span class="panel-stepnum" style="background:var(--accent2-dim);color:var(--accent2);">🌿 DEEP DISC</span>
+        <span class="panel-title">Landscaping Discovery</span>
+        <span class="panel-hint">3 core motions — pick the one that fits the conversation</span>
+      </div>
+
+      <div class="disc-kpi-card" id="ls-1">
+        <div class="disc-kpi-header" onclick="toggleKpi('ls-1')">
+          <span class="disc-kpi-label" style="background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent);">MOTION 1</span>
+          <span class="disc-kpi-title">🌱 Job Costing</span>
+          <span class="disc-kpi-chevron">▶</span>
+        </div>
+        <div class="disc-kpi-body">
+          <div class="disc-sub-title" style="color:var(--accent2);">Discovery Questions</div>
+          <div class="disc-q">"When a project goes over budget, how do you determine whether it was labor, materials, or scope creep?"</div>
+          <div class="disc-q">"Are you tracking job profitability in real time or after completion?"</div>
+          <div class="disc-q">"How quickly can you adjust future bids based on past jobs?"</div>
+          <div class="disc-sub-title" style="color:var(--accent);">✅ Good Pain Signals</div>
+          <div class="disc-pain-item">"We don't know which jobs are actually profitable."</div>
+          <div class="disc-pain-item">"We find out mistakes after the job is done."</div>
+          <div class="disc-pain-item">"Bids aren't always accurate."</div>
+        </div>
+      </div>
+
+      <div class="disc-kpi-card" id="ls-2">
+        <div class="disc-kpi-header" onclick="toggleKpi('ls-2')">
+          <span class="disc-kpi-label" style="background:var(--warn-dim);color:var(--warn);border:1px solid var(--warn);">MOTION 2</span>
+          <span class="disc-kpi-title">👷 Crew Productivity</span>
+          <span class="disc-kpi-chevron">▶</span>
+        </div>
+        <div class="disc-kpi-body">
+          <div class="disc-sub-title" style="color:var(--accent2);">Discovery Questions</div>
+          <div class="disc-q">"How are you measuring productivity across different crews?"</div>
+          <div class="disc-q">"Can you tie crew performance directly to profitability?"</div>
+          <div class="disc-q">"If one crew outperforms another, how quickly can you identify why?"</div>
+          <div class="disc-sub-title" style="color:var(--accent);">✅ Good Pain Signals</div>
+          <div class="disc-pain-item">"Some crews are better, but we don't know why."</div>
+          <div class="disc-pain-item">"We track hours, not productivity."</div>
+          <div class="disc-pain-item">"Performance is inconsistent."</div>
+        </div>
+      </div>
+
+      <div class="disc-kpi-card" id="ls-3">
+        <div class="disc-kpi-header" onclick="toggleKpi('ls-3')">
+          <span class="disc-kpi-label" style="background:var(--accent2-dim);color:var(--accent2);border:1px solid var(--accent2);">MOTION 3</span>
+          <span class="disc-kpi-title">📦 Material Costs</span>
+          <span class="disc-kpi-chevron">▶</span>
+        </div>
+        <div class="disc-kpi-body">
+          <div class="disc-sub-title" style="color:var(--accent2);">Discovery Questions</div>
+          <div class="disc-q">"How do you track material and equipment costs per job?"</div>
+          <div class="disc-q">"Are those costs accurately allocated?"</div>
+          <div class="disc-q">"When costs fluctuate, how quickly can you adjust pricing?"</div>
+          <div class="disc-sub-title" style="color:var(--accent);">✅ Good Pain Signals</div>
+          <div class="disc-pain-item">"Material costs eat into margins."</div>
+          <div class="disc-pain-item">"We don't track usage closely."</div>
+          <div class="disc-pain-item">"We're guessing on pricing sometimes."</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INDUSTRY DISCOVERY: PEST CONTROL -->
+    <div class="section-block" id="sec-disc-pest">
+      <div class="panel-header">
+        <span class="panel-stepnum" style="background:var(--accent2-dim);color:var(--accent2);">🐛 DEEP DISC</span>
+        <span class="panel-title">Pest Control Discovery</span>
+        <span class="panel-hint">3 core motions — pick the one that fits the conversation</span>
+      </div>
+
+      <div class="disc-kpi-card" id="pc-1">
+        <div class="disc-kpi-header" onclick="toggleKpi('pc-1')">
+          <span class="disc-kpi-label" style="background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent);">MOTION 1</span>
+          <span class="disc-kpi-title">🗺️ Route Efficiency</span>
+          <span class="disc-kpi-chevron">▶</span>
+        </div>
+        <div class="disc-kpi-body">
+          <div class="disc-sub-title" style="color:var(--accent2);">Discovery Questions</div>
+          <div class="disc-q">"How do you evaluate route profitability beyond just number of stops?"</div>
+          <div class="disc-q">"Are drive time and fuel factored into route performance?"</div>
+          <div class="disc-q">"How quickly can you optimize inefficient routes?"</div>
+          <div class="disc-sub-title" style="color:var(--accent);">✅ Good Pain Signals</div>
+          <div class="disc-pain-item">"Routes are full but not optimized."</div>
+          <div class="disc-pain-item">"We waste time driving."</div>
+          <div class="disc-pain-item">"We haven't revisited routes in a while."</div>
+        </div>
+      </div>
+
+      <div class="disc-kpi-card" id="pc-2">
+        <div class="disc-kpi-header" onclick="toggleKpi('pc-2')">
+          <span class="disc-kpi-label" style="background:var(--warn-dim);color:var(--warn);border:1px solid var(--warn);">MOTION 2</span>
+          <span class="disc-kpi-title">🔁 Customer Value / LTV</span>
+          <span class="disc-kpi-chevron">▶</span>
+        </div>
+        <div class="disc-kpi-body">
+          <div class="disc-sub-title" style="color:var(--accent2);">Discovery Questions</div>
+          <div class="disc-q">"How do you measure lifetime value across service plans?"</div>
+          <div class="disc-q">"Can you connect retention to revenue and margin?"</div>
+          <div class="disc-q">"If churn increases, how quickly can you respond?"</div>
+          <div class="disc-sub-title" style="color:var(--accent);">✅ Good Pain Signals</div>
+          <div class="disc-pain-item">"We don't know our best customers."</div>
+          <div class="disc-pain-item">"Retention is okay, but unclear impact."</div>
+          <div class="disc-pain-item">"We don't tie churn to revenue."</div>
+        </div>
+      </div>
+
+      <div class="disc-kpi-card" id="pc-3">
+        <div class="disc-kpi-header" onclick="toggleKpi('pc-3')">
+          <span class="disc-kpi-label" style="background:var(--accent2-dim);color:var(--accent2);border:1px solid var(--accent2);">MOTION 3</span>
+          <span class="disc-kpi-title">👨‍🔧 Technician Productivity</span>
+          <span class="disc-kpi-chevron">▶</span>
+        </div>
+        <div class="disc-kpi-body">
+          <div class="disc-sub-title" style="color:var(--accent2);">Discovery Questions</div>
+          <div class="disc-q">"How are you measuring technician performance?"</div>
+          <div class="disc-q">"Can you tie performance to profitability?"</div>
+          <div class="disc-q">"If productivity drops, how quickly can you identify it?"</div>
+          <div class="disc-sub-title" style="color:var(--accent);">✅ Good Pain Signals</div>
+          <div class="disc-pain-item">"We track jobs, not efficiency."</div>
+          <div class="disc-pain-item">"Some techs outperform others."</div>
+          <div class="disc-pain-item">"We don't know why productivity varies."</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INDUSTRY DISCOVERY: AUTO SERVICES -->
+    <div class="section-block" id="sec-disc-auto">
+      <div class="panel-header">
+        <span class="panel-stepnum" style="background:var(--accent2-dim);color:var(--accent2);">🔧 DEEP DISC</span>
+        <span class="panel-title">Auto Services Discovery</span>
+        <span class="panel-hint">3 core motions — pick the one that fits the conversation</span>
+      </div>
+
+      <div class="disc-kpi-card" id="as-1">
+        <div class="disc-kpi-header" onclick="toggleKpi('as-1')">
+          <span class="disc-kpi-label" style="background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent);">MOTION 1</span>
+          <span class="disc-kpi-title">🔧 Repair Profitability</span>
+          <span class="disc-kpi-chevron">▶</span>
+        </div>
+        <div class="disc-kpi-body">
+          <div class="disc-sub-title" style="color:var(--accent2);">Discovery Questions</div>
+          <div class="disc-q">"How do you determine if a repair was truly profitable?"</div>
+          <div class="disc-q">"Are you tracking profitability per service type?"</div>
+          <div class="disc-q">"How quickly can you identify underperforming services?"</div>
+          <div class="disc-sub-title" style="color:var(--accent);">✅ Good Pain Signals</div>
+          <div class="disc-pain-item">"Revenue is strong, profit isn't."</div>
+          <div class="disc-pain-item">"We don't know our most profitable services."</div>
+          <div class="disc-pain-item">"Margins vary a lot."</div>
+        </div>
+      </div>
+
+      <div class="disc-kpi-card" id="as-2">
+        <div class="disc-kpi-header" onclick="toggleKpi('as-2')">
+          <span class="disc-kpi-label" style="background:var(--warn-dim);color:var(--warn);border:1px solid var(--warn);">MOTION 2</span>
+          <span class="disc-kpi-title">👨‍🔧 Technician Efficiency</span>
+          <span class="disc-kpi-chevron">▶</span>
+        </div>
+        <div class="disc-kpi-body">
+          <div class="disc-sub-title" style="color:var(--accent2);">Discovery Questions</div>
+          <div class="disc-q">"How are you measuring billed vs actual hours?"</div>
+          <div class="disc-q">"Can you tie efficiency to revenue?"</div>
+          <div class="disc-q">"If efficiency drops, how quickly can you react?"</div>
+          <div class="disc-sub-title" style="color:var(--accent);">✅ Good Pain Signals</div>
+          <div class="disc-pain-item">"We suspect inefficiencies but can't prove it."</div>
+          <div class="disc-pain-item">"Some techs outperform others."</div>
+          <div class="disc-pain-item">"We don't track it well."</div>
+        </div>
+      </div>
+
+      <div class="disc-kpi-card" id="as-3">
+        <div class="disc-kpi-header" onclick="toggleKpi('as-3')">
+          <span class="disc-kpi-label" style="background:var(--accent2-dim);color:var(--accent2);border:1px solid var(--accent2);">MOTION 3</span>
+          <span class="disc-kpi-title">📦 Parts &amp; Inventory</span>
+          <span class="disc-kpi-chevron">▶</span>
+        </div>
+        <div class="disc-kpi-body">
+          <div class="disc-sub-title" style="color:var(--accent2);">Discovery Questions</div>
+          <div class="disc-q">"How do you track parts usage and inventory?"</div>
+          <div class="disc-q">"Are discrepancies easy to identify?"</div>
+          <div class="disc-q">"How quickly can you trace issues?"</div>
+          <div class="disc-sub-title" style="color:var(--accent);">✅ Good Pain Signals</div>
+          <div class="disc-pain-item">"Parts go missing or get delayed."</div>
+          <div class="disc-pain-item">"Inventory isn't always accurate."</div>
+          <div class="disc-pain-item">"We don't catch issues early."</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INDUSTRY DISCOVERY: RESTAURANTS -->
+    <div class="section-block" id="sec-disc-restaurant">
+      <div class="panel-header">
+        <span class="panel-stepnum" style="background:var(--accent2-dim);color:var(--accent2);">🍽️ DEEP DISC</span>
+        <span class="panel-title">Restaurant Discovery</span>
+        <span class="panel-hint">3 core motions — pick the one that fits the conversation</span>
+      </div>
+
+      <div class="disc-kpi-card" id="rs-1">
+        <div class="disc-kpi-header" onclick="toggleKpi('rs-1')">
+          <span class="disc-kpi-label" style="background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent);">MOTION 1</span>
+          <span class="disc-kpi-title">🍽️ Prime Cost</span>
+          <span class="disc-kpi-chevron">▶</span>
+        </div>
+        <div class="disc-kpi-body">
+          <div class="disc-sub-title" style="color:var(--accent2);">Discovery Questions</div>
+          <div class="disc-q">"How do you isolate whether food or labor is impacting margins?"</div>
+          <div class="disc-q">"Are these tracked daily or after month-end?"</div>
+          <div class="disc-q">"How quickly can managers act?"</div>
+          <div class="disc-sub-title" style="color:var(--accent);">✅ Good Pain Signals</div>
+          <div class="disc-pain-item">"Food costs fluctuate a lot."</div>
+          <div class="disc-pain-item">"Labor scheduling isn't optimized."</div>
+          <div class="disc-pain-item">"We react too late."</div>
+        </div>
+      </div>
+
+      <div class="disc-kpi-card" id="rs-2">
+        <div class="disc-kpi-header" onclick="toggleKpi('rs-2')">
+          <span class="disc-kpi-label" style="background:var(--warn-dim);color:var(--warn);border:1px solid var(--warn);">MOTION 2</span>
+          <span class="disc-kpi-title">📋 Menu Profitability</span>
+          <span class="disc-kpi-chevron">▶</span>
+        </div>
+        <div class="disc-kpi-body">
+          <div class="disc-sub-title" style="color:var(--accent2);">Discovery Questions</div>
+          <div class="disc-q">"How do you determine your most profitable items?"</div>
+          <div class="disc-q">"Do you factor in cost changes?"</div>
+          <div class="disc-q">"How quickly can you adjust pricing?"</div>
+          <div class="disc-sub-title" style="color:var(--accent);">✅ Good Pain Signals</div>
+          <div class="disc-pain-item">"Some items sell well but don't make money."</div>
+          <div class="disc-pain-item">"We don't analyze menu deeply."</div>
+          <div class="disc-pain-item">"We rarely adjust pricing."</div>
+        </div>
+      </div>
+
+      <div class="disc-kpi-card" id="rs-3">
+        <div class="disc-kpi-header" onclick="toggleKpi('rs-3')">
+          <span class="disc-kpi-label" style="background:var(--accent2-dim);color:var(--accent2);border:1px solid var(--accent2);">MOTION 3</span>
+          <span class="disc-kpi-title">🕒 Shift Performance</span>
+          <span class="disc-kpi-chevron">▶</span>
+        </div>
+        <div class="disc-kpi-body">
+          <div class="disc-sub-title" style="color:var(--accent2);">Discovery Questions</div>
+          <div class="disc-q">"How do you compare shifts or time periods?"</div>
+          <div class="disc-q">"Can you tie labor to revenue per shift?"</div>
+          <div class="disc-q">"How quickly can you fix underperforming shifts?"</div>
+          <div class="disc-sub-title" style="color:var(--accent);">✅ Good Pain Signals</div>
+          <div class="disc-pain-item">"Some shifts are slower, unclear why."</div>
+          <div class="disc-pain-item">"Staffing isn't aligned with demand."</div>
+          <div class="disc-pain-item">"We don't track it closely."</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INDUSTRY DISCOVERY: CANNABIS -->
+    <div class="section-block" id="sec-disc-cannabis">
+      <div class="panel-header">
+        <span class="panel-stepnum" style="background:var(--accent2-dim);color:var(--accent2);">🌿 DEEP DISC</span>
+        <span class="panel-title">Cannabis Discovery</span>
+        <span class="panel-hint">3 core motions — pick the one that fits the conversation</span>
+      </div>
+
+      <div class="disc-kpi-card" id="cn-1">
+        <div class="disc-kpi-header" onclick="toggleKpi('cn-1')">
+          <span class="disc-kpi-label" style="background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent);">MOTION 1</span>
+          <span class="disc-kpi-title">📦 Inventory Control</span>
+          <span class="disc-kpi-chevron">▶</span>
+        </div>
+        <div class="disc-kpi-body">
+          <div class="disc-sub-title" style="color:var(--accent2);">Discovery Questions</div>
+          <div class="disc-q">"How do you track inventory across locations?"</div>
+          <div class="disc-q">"When discrepancies happen, how quickly are they found?"</div>
+          <div class="disc-q">"Can you trace issues back to source?"</div>
+          <div class="disc-sub-title" style="color:var(--accent);">✅ Good Pain Signals</div>
+          <div class="disc-pain-item">"Inventory doesn't always match."</div>
+          <div class="disc-pain-item">"We rely on manual checks."</div>
+          <div class="disc-pain-item">"Shrinkage is hard to track."</div>
+        </div>
+      </div>
+
+      <div class="disc-kpi-card" id="cn-2">
+        <div class="disc-kpi-header" onclick="toggleKpi('cn-2')">
+          <span class="disc-kpi-label" style="background:var(--warn-dim);color:var(--warn);border:1px solid var(--warn);">MOTION 2</span>
+          <span class="disc-kpi-title">💰 Product Margins</span>
+          <span class="disc-kpi-chevron">▶</span>
+        </div>
+        <div class="disc-kpi-body">
+          <div class="disc-sub-title" style="color:var(--accent2);">Discovery Questions</div>
+          <div class="disc-q">"How do you measure margins per product?"</div>
+          <div class="disc-q">"Can you adjust pricing quickly?"</div>
+          <div class="disc-q">"How fast can you identify margin compression?"</div>
+          <div class="disc-sub-title" style="color:var(--accent);">✅ Good Pain Signals</div>
+          <div class="disc-pain-item">"Margins vary a lot by product."</div>
+          <div class="disc-pain-item">"We don't adjust pricing fast enough."</div>
+          <div class="disc-pain-item">"We don't know top performers."</div>
+        </div>
+      </div>
+
+      <div class="disc-kpi-card" id="cn-3">
+        <div class="disc-kpi-header" onclick="toggleKpi('cn-3')">
+          <span class="disc-kpi-label" style="background:var(--accent2-dim);color:var(--accent2);border:1px solid var(--accent2);">MOTION 3</span>
+          <span class="disc-kpi-title">⚖️ Compliance</span>
+          <span class="disc-kpi-chevron">▶</span>
+        </div>
+        <div class="disc-kpi-body">
+          <div class="disc-sub-title" style="color:var(--accent2);">Discovery Questions</div>
+          <div class="disc-q">"How manual is compliance reporting?"</div>
+          <div class="disc-q">"Do systems reconcile cleanly?"</div>
+          <div class="disc-q">"How quickly can you produce reports?"</div>
+          <div class="disc-sub-title" style="color:var(--accent);">✅ Good Pain Signals</div>
+          <div class="disc-pain-item">"Compliance takes too much time."</div>
+          <div class="disc-pain-item">"We reconcile manually."</div>
+          <div class="disc-pain-item">"Reporting is stressful."</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INDUSTRY DISCOVERY: FITNESS -->
+    <div class="section-block" id="sec-disc-fitness">
+      <div class="panel-header">
+        <span class="panel-stepnum" style="background:var(--accent2-dim);color:var(--accent2);">💪 DEEP DISC</span>
+        <span class="panel-title">Fitness &amp; Wellness Discovery</span>
+        <span class="panel-hint">3 core motions — pick the one that fits the conversation</span>
+      </div>
+
+      <div class="disc-kpi-card" id="fw-1">
+        <div class="disc-kpi-header" onclick="toggleKpi('fw-1')">
+          <span class="disc-kpi-label" style="background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent);">MOTION 1</span>
+          <span class="disc-kpi-title">💳 Membership Profitability</span>
+          <span class="disc-kpi-chevron">▶</span>
+        </div>
+        <div class="disc-kpi-body">
+          <div class="disc-sub-title" style="color:var(--accent2);">Discovery Questions</div>
+          <div class="disc-q">"How do you measure profitability per membership type?"</div>
+          <div class="disc-q">"Can you tie usage to cost?"</div>
+          <div class="disc-q">"How quickly can you adjust pricing?"</div>
+          <div class="disc-sub-title" style="color:var(--accent);">✅ Good Pain Signals</div>
+          <div class="disc-pain-item">"Members use more than expected."</div>
+          <div class="disc-pain-item">"We don't know which memberships are best."</div>
+          <div class="disc-pain-item">"Profitability is unclear."</div>
+        </div>
+      </div>
+
+      <div class="disc-kpi-card" id="fw-2">
+        <div class="disc-kpi-header" onclick="toggleKpi('fw-2')">
+          <span class="disc-kpi-label" style="background:var(--warn-dim);color:var(--warn);border:1px solid var(--warn);">MOTION 2</span>
+          <span class="disc-kpi-title">🧘 Class Utilization</span>
+          <span class="disc-kpi-chevron">▶</span>
+        </div>
+        <div class="disc-kpi-body">
+          <div class="disc-sub-title" style="color:var(--accent2);">Discovery Questions</div>
+          <div class="disc-q">"How do you evaluate class profitability?"</div>
+          <div class="disc-q">"Do you factor in instructor cost?"</div>
+          <div class="disc-q">"How quickly can you adjust schedules?"</div>
+          <div class="disc-sub-title" style="color:var(--accent);">✅ Good Pain Signals</div>
+          <div class="disc-pain-item">"Some classes are full but not profitable."</div>
+          <div class="disc-pain-item">"We don't track utilization well."</div>
+          <div class="disc-pain-item">"Scheduling is guesswork."</div>
+        </div>
+      </div>
+
+      <div class="disc-kpi-card" id="fw-3">
+        <div class="disc-kpi-header" onclick="toggleKpi('fw-3')">
+          <span class="disc-kpi-label" style="background:var(--accent2-dim);color:var(--accent2);border:1px solid var(--accent2);">MOTION 3</span>
+          <span class="disc-kpi-title">🔁 Retention &amp; LTV</span>
+          <span class="disc-kpi-chevron">▶</span>
+        </div>
+        <div class="disc-kpi-body">
+          <div class="disc-sub-title" style="color:var(--accent2);">Discovery Questions</div>
+          <div class="disc-q">"How do you track retention and LTV?"</div>
+          <div class="disc-q">"Can you connect retention to revenue?"</div>
+          <div class="disc-q">"How quickly can you act on churn?"</div>
+          <div class="disc-sub-title" style="color:var(--accent);">✅ Good Pain Signals</div>
+          <div class="disc-pain-item">"We lose members without clear reason."</div>
+          <div class="disc-pain-item">"Retention data isn't clear."</div>
+          <div class="disc-pain-item">"We react too late."</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INDUSTRY DISCOVERY: GENERAL SMB -->
+    <div class="section-block" id="sec-disc-smb">
+      <div class="panel-header">
+        <span class="panel-stepnum" style="background:var(--accent2-dim);color:var(--accent2);">🏢 DEEP DISC</span>
+        <span class="panel-title">General SMB Discovery</span>
+        <span class="panel-hint">3 core motions — works across any SMB vertical</span>
+      </div>
+
+      <div class="disc-kpi-card" id="smb-1">
+        <div class="disc-kpi-header" onclick="toggleKpi('smb-1')">
+          <span class="disc-kpi-label" style="background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent);">MOTION 1</span>
+          <span class="disc-kpi-title">📊 Visibility</span>
+          <span class="disc-kpi-chevron">▶</span>
+        </div>
+        <div class="disc-kpi-body">
+          <div class="disc-sub-title" style="color:var(--accent2);">Discovery Questions</div>
+          <div class="disc-q">"How confident are you in your numbers mid-month?"</div>
+          <div class="disc-q">"Can you break down performance easily?"</div>
+          <div class="disc-q">"How quickly can you deliver insights?"</div>
+          <div class="disc-sub-title" style="color:var(--accent);">✅ Good Pain Signals</div>
+          <div class="disc-pain-item">"We rely on spreadsheets."</div>
+          <div class="disc-pain-item">"We don't trust real-time numbers."</div>
+          <div class="disc-pain-item">"Reporting is slow."</div>
+        </div>
+      </div>
+
+      <div class="disc-kpi-card" id="smb-2">
+        <div class="disc-kpi-header" onclick="toggleKpi('smb-2')">
+          <span class="disc-kpi-label" style="background:var(--warn-dim);color:var(--warn);border:1px solid var(--warn);">MOTION 2</span>
+          <span class="disc-kpi-title">⏱️ Close Process</span>
+          <span class="disc-kpi-chevron">▶</span>
+        </div>
+        <div class="disc-kpi-body">
+          <div class="disc-sub-title" style="color:var(--accent2);">Discovery Questions</div>
+          <div class="disc-q">"How long does it take to close?"</div>
+          <div class="disc-q">"What's manual today?"</div>
+          <div class="disc-q">"How quickly can you fix issues when they come up?"</div>
+          <div class="disc-sub-title" style="color:var(--accent);">✅ Good Pain Signals</div>
+          <div class="disc-pain-item">"Close takes too long."</div>
+          <div class="disc-pain-item">"Too many manual steps."</div>
+          <div class="disc-pain-item">"Errors happen."</div>
+        </div>
+      </div>
+
+      <div class="disc-kpi-card" id="smb-3">
+        <div class="disc-kpi-header" onclick="toggleKpi('smb-3')">
+          <span class="disc-kpi-label" style="background:var(--accent2-dim);color:var(--accent2);border:1px solid var(--accent2);">MOTION 3</span>
+          <span class="disc-kpi-title">🔄 Reporting Flexibility</span>
+          <span class="disc-kpi-chevron">▶</span>
+        </div>
+        <div class="disc-kpi-body">
+          <div class="disc-sub-title" style="color:var(--accent2);">Discovery Questions</div>
+          <div class="disc-q">"How flexible is your reporting today?"</div>
+          <div class="disc-q">"Can you answer new questions quickly?"</div>
+          <div class="disc-q">"How fast do insights turn into action?"</div>
+          <div class="disc-sub-title" style="color:var(--accent);">✅ Good Pain Signals</div>
+          <div class="disc-pain-item">"Reports are static."</div>
+          <div class="disc-pain-item">"New questions take time."</div>
+          <div class="disc-pain-item">"Decisions are delayed."</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BATTLE: R365 -->
+    <div class="section-block" id="sec-battle-r365">
+      <div class="panel-header">
+        <span class="panel-stepnum" style="background:var(--danger-dim);color:var(--danger);">⚔ BATTLE</span>
+        <span class="panel-title">Sage Intacct vs Restaurant365</span>
+        <span class="panel-hint">Use when prospect mentions R365 or hospitality</span>
+      </div>
+
+      <!-- Trigger signals -->
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:10px 14px;">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:7px;">Use When They Say</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+          <span style="background:var(--danger-dim);border:1px solid var(--danger);color:var(--danger);font-size:10px;padding:3px 9px;border-radius:12px;font-family:var(--mono);">"We use Restaurant365"</span>
+          <span style="background:var(--danger-dim);border:1px solid var(--danger);color:var(--danger);font-size:10px;padding:3px 9px;border-radius:12px;font-family:var(--mono);">"We're in restaurants / hospitality"</span>
+          <span style="background:var(--danger-dim);border:1px solid var(--danger);color:var(--danger);font-size:10px;padding:3px 9px;border-radius:12px;font-family:var(--mono);">"Better reporting across locations"</span>
+          <span style="background:var(--danger-dim);border:1px solid var(--danger);color:var(--danger);font-size:10px;padding:3px 9px;border-radius:12px;font-family:var(--mono);">"Evaluating accounting platforms"</span>
+        </div>
+      </div>
+
+      <!-- 10-second positioning -->
+      <div class="battle-positioning">
+        <strong>⚡ 10-SECOND POSITIONING — SAY THIS</strong>
+        "Restaurant365 is strong for restaurant operations and location-level workflows. Sage Intacct usually wins when finance needs scalable multi-entity accounting, faster close, and flexible reporting across properties, outlets, and business lines — especially as complexity grows."
+      </div>
+
+      <!-- Comparison table -->
+      <div style="overflow-x:auto;">
+        <table class="battle-table">
+          <thead>
+            <tr>
+              <th style="width:22%">Accounting Area</th>
+              <th style="width:22%">Why It Matters</th>
+              <th class="win" style="width:28%">✅ Sage Intacct</th>
+              <th class="lose" style="width:28%">⚠ R365 Reality</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="area">Multi-entity / multi-property consolidation</td>
+              <td>Groups expand fast: locations, entities, ownership structures</td>
+              <td class="win">Built for multi-entity consolidation + intercompany clarity</td>
+              <td class="lose">Strong for multi-location restaurants, but consolidation depth varies by structure</td>
+            </tr>
+            <tr>
+              <td class="area">Dimensional reporting</td>
+              <td>Finance needs P&L by property/outlet/channel without COA chaos</td>
+              <td class="win">Dimensions let you slice results without rebuilding chart of accounts</td>
+              <td class="lose">Strong restaurant reporting, but feels more "restaurant model" vs flexible finance dimensions</td>
+            </tr>
+            <tr>
+              <td class="area">Close speed + controls at scale</td>
+              <td>Allocations, accruals, approvals get heavier as you grow</td>
+              <td class="win">Strong financial close discipline, role controls, audit trail</td>
+              <td class="lose">Finance teams may want more ERP-grade close/controls as complexity rises</td>
+            </tr>
+            <tr>
+              <td class="area">Corporate finance visibility</td>
+              <td>Hospitality often includes lodging + F&B + events + mgmt entities</td>
+              <td class="win">Designed for broader entity types and corporate finance reporting</td>
+              <td class="lose">Excellent for restaurant-centric orgs; cross-vertical expansion may need more structure</td>
+            </tr>
+            <tr>
+              <td class="area">AP automation + spend governance</td>
+              <td>Vendor spend leakage hits margin fast</td>
+              <td class="win">Strong AP workflows, approvals, vendor analytics</td>
+              <td class="lose">AP is solid, but depth of configurable workflows varies by use case</td>
+            </tr>
+            <tr>
+              <td class="area">Budgeting / forecasting</td>
+              <td>Labor + demand swings require real forecasting</td>
+              <td class="win">Budget-to-actual, scenario planning, finance-led forecasting</td>
+              <td class="lose">Strong operational planning for restaurants; finance forecasting maturity varies</td>
+            </tr>
+            <tr>
+              <td class="area">Scaling beyond "ops-first"</td>
+              <td>Leaders need finance to drive decisions, not just report history</td>
+              <td class="win">Finance-first system optimized for accounting teams</td>
+              <td class="lose">Ops-first platform; finance-led flexibility may be the gap at scale</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Wedge questions -->
+      <div class="battle-wedge">
+        <div class="battle-wedge-title">🔍 Wedge Questions — Ask 1–2, then stop</div>
+        <div class="battle-wedge-q">"How many locations/entities do you manage — and do you consolidate across owners or management companies?"</div>
+        <div class="battle-wedge-q">"Can you get a clean P&L by location + department + channel without exporting to Excel?"</div>
+        <div class="battle-wedge-q">"How long is month-end close — and what's the #1 bottleneck?"</div>
+        <div class="battle-wedge-q">"Do you need financial reporting across multiple business lines (lodging + F&B + events)?"</div>
+        <div class="battle-wedge-q">"How confident are you that vendor spend and approvals are controlled consistently across locations?"</div>
+      </div>
+
+      <!-- Good pain signals -->
+      <div class="battle-pain">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--accent);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:8px;">✅ Good Pain Signals — Listen for These</div>
+        <div class="battle-pain-item">"We're growing and reporting is getting messy."</div>
+        <div class="battle-pain-item">"We need better consolidated reporting across entities."</div>
+        <div class="battle-pain-item">"We still pull things into spreadsheets to get leadership views."</div>
+        <div class="battle-pain-item">"Month-end close keeps slipping as we add locations."</div>
+        <div class="battle-pain-item">"We can't easily drill down into what's driving margin changes."</div>
+        <div class="battle-pain-item">"Approvals and controls aren't consistent across locations."</div>
+        <div class="battle-pain-item">"We need reporting beyond restaurants — more corporate-level finance visibility."</div>
+      </div>
+
+      <!-- Talk track -->
+      <div class="battle-talk">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--warn);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:10px;">🧠 Talk Track</div>
+        <div class="battle-talk-step">
+          <span class="battle-talk-label">RESPECT</span>
+          <span class="battle-talk-text">"Restaurant365 is great at restaurant operations and location-level workflows."</span>
+        </div>
+        <div class="battle-talk-step">
+          <span class="battle-talk-label">WEDGE</span>
+          <span class="battle-talk-text">"Where Intacct tends to win is when finance needs more scalable consolidation, cleaner close processes, and flexible reporting across multiple entity types — especially as you grow into more complexity."</span>
+        </div>
+        <div class="battle-talk-step">
+          <span class="battle-talk-label">LAND IT</span>
+          <span class="battle-talk-text">"So if your finance team is doing manual work to consolidate, drill down, or build board-ready reporting… that's exactly the gap we help close."</span>
+        </div>
+      </div>
+
+      <!-- Landmines -->
+      <div class="battle-landmine">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--danger);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:10px;">🧨 Landmines — Don't Say These</div>
+        <div class="landmine-row">
+          <div class="landmine-dont">❌ "R365 can't do that."</div>
+          <div class="landmine-do">✅ Say: "R365 is strong operationally — Intacct is typically stronger for finance-led scalability and consolidation."</div>
+        </div>
+        <div class="landmine-row">
+          <div class="landmine-dont">❌ "You should rip and replace."</div>
+          <div class="landmine-do">✅ Say: "This is about whether your system matches your next stage of growth."</div>
+        </div>
+      </div>
+
+      <!-- CTA -->
+      <div class="battle-cta">
+        <strong>🏁 CLEAN CTA</strong>
+        "If we could show you a multi-entity consolidated view with drill-down by location and department — and reduce spreadsheet reporting while tightening spend control — would it be worth 15 minutes to benchmark your current setup?"
+      </div>
+
+      <!-- When R365 wins -->
+      <div class="battle-honest">
+        <div class="battle-honest-title">🧩 When R365 Might Be the Better Fit — Be Honest</div>
+        <div class="battle-honest-item">The business is primarily restaurant-only and wants an ops-first platform</div>
+        <div class="battle-honest-item">They value restaurant-specific workflows above corporate finance complexity</div>
+        <div class="battle-honest-item">Finance reporting needs are straightforward and consolidation is light</div>
+      </div>
+
+    </div>
+
+    <!-- BATTLE: NETSUITE -->
+    <div class="section-block" id="sec-battle-netsuite">
+      <div class="panel-header">
+        <span class="panel-stepnum" style="background:var(--danger-dim);color:var(--danger);">⚔ BATTLE</span>
+        <span class="panel-title">Sage Intacct vs NetSuite</span>
+        <span class="panel-hint">Use when prospect mentions NetSuite or "we already have an ERP"</span>
+      </div>
+
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:10px 14px;">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:7px;">Use When They Say</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+          <span style="background:var(--danger-dim);border:1px solid var(--danger);color:var(--danger);font-size:10px;padding:3px 9px;border-radius:12px;font-family:var(--mono);">"We use NetSuite"</span>
+          <span style="background:var(--danger-dim);border:1px solid var(--danger);color:var(--danger);font-size:10px;padding:3px 9px;border-radius:12px;font-family:var(--mono);">"We already have an ERP"</span>
+          <span style="background:var(--danger-dim);border:1px solid var(--danger);color:var(--danger);font-size:10px;padding:3px 9px;border-radius:12px;font-family:var(--mono);">"Evaluating Intacct vs NetSuite"</span>
+          <span style="background:var(--danger-dim);border:1px solid var(--danger);color:var(--danger);font-size:10px;padding:3px 9px;border-radius:12px;font-family:var(--mono);">"Multi-property reporting / cleaner close"</span>
+        </div>
+      </div>
+
+      <div class="battle-positioning">
+        <strong>⚡ 10-SECOND POSITIONING — SAY THIS</strong>
+        "NetSuite is a powerful suite. Sage Intacct usually wins for hospitality finance teams that want faster close, clean multi-entity reporting, and property-level visibility without turning the finance team into system admins."
+      </div>
+
+      <div style="overflow-x:auto;">
+        <table class="battle-table">
+          <thead>
+            <tr>
+              <th style="width:22%">Accounting Area</th>
+              <th style="width:22%">Why It Matters</th>
+              <th class="win" style="width:28%">✅ Sage Intacct</th>
+              <th class="lose" style="width:28%">⚠ NetSuite Reality</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="area">Multi-entity / multi-property consolidation</td>
+              <td>Groups have multiple properties, entities, ownership structures</td>
+              <td class="win">Built to consolidate and report across entities cleanly</td>
+              <td class="lose">Strong with OneWorld, but can require heavier configuration depending on structure</td>
+            </tr>
+            <tr>
+              <td class="area">Dimensional reporting (property / dept / channel)</td>
+              <td>Finance needs P&L by property/outlet/channel without bloating COA</td>
+              <td class="win">Dimensions make reporting flexible without rebuilding the chart of accounts</td>
+              <td class="lose">Can do it with segments/classes/locations, but often more setup to match flexibility</td>
+            </tr>
+            <tr>
+              <td class="area">Close speed + less spreadsheet work</td>
+              <td>Allocations/intercompany/recons pile up fast</td>
+              <td class="win">Finance-forward workflows + repeatable reporting</td>
+              <td class="lose">Can close fast, but implementation quality determines admin burden</td>
+            </tr>
+            <tr>
+              <td class="area">Accounting-first usability</td>
+              <td>Controllers want clarity, not ERP complexity</td>
+              <td class="win">Finance-led design; easier day-to-day management</td>
+              <td class="lose">Broader suite = more complexity for pure accounting workflows</td>
+            </tr>
+            <tr>
+              <td class="area">Role-based access / property separation</td>
+              <td>Property leaders need limited views &amp; controls</td>
+              <td class="win">Strong role controls for property-level visibility</td>
+              <td class="lose">Powerful permissions, but must be tightly designed to avoid exposure/mess</td>
+            </tr>
+            <tr>
+              <td class="area">Best-of-breed hospitality integrations</td>
+              <td>Hospitality stacks are mixed and always evolving</td>
+              <td class="win">Works well as finance hub connected to best-of-breed tools</td>
+              <td class="lose">Can be suite backbone, but hospitality integrations often still require custom work</td>
+            </tr>
+            <tr>
+              <td class="area">Channel margin clarity (Direct vs OTA)</td>
+              <td>OTAs can inflate revenue while crushing profit</td>
+              <td class="win">Easier to report net revenue + fees by channel</td>
+              <td class="lose">Can report it, but often needs more segment/report design work</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="battle-wedge">
+        <div class="battle-wedge-title">🔍 Wedge Questions — Ask 1–2, then stop</div>
+        <div class="battle-wedge-q">"How many entities/properties are you consolidating today?"</div>
+        <div class="battle-wedge-q">"Can you get a property P&L + department view without exporting to spreadsheets?"</div>
+        <div class="battle-wedge-q">"How long is month-end close — and what's the most manual part?"</div>
+        <div class="battle-wedge-q">"Can you see Direct vs OTA profitability after fees, by property?"</div>
+        <div class="battle-wedge-q">"Does finance own reporting changes, or do you need admin/IT support?"</div>
+      </div>
+
+      <div class="battle-pain">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--accent);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:8px;">✅ Good Pain Signals — Listen for These</div>
+        <div class="battle-pain-item">"Consolidation takes forever."</div>
+        <div class="battle-pain-item">"We export to Excel to get property-level reporting."</div>
+        <div class="battle-pain-item">"We can't drill down by department/channel easily."</div>
+        <div class="battle-pain-item">"Close is slow because of allocations and intercompany."</div>
+        <div class="battle-pain-item">"Reporting changes take too long or require help."</div>
+        <div class="battle-pain-item">"OTAs are driving bookings but profit isn't improving."</div>
+        <div class="battle-pain-item">"We can't trust the numbers until late in the month."</div>
+      </div>
+
+      <div class="battle-talk">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--warn);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:10px;">🧠 Talk Track</div>
+        <div class="battle-talk-step">
+          <span class="battle-talk-label">ACKNOWLEDGE</span>
+          <span class="battle-talk-text">"NetSuite is strong — especially if you want a wide ERP suite."</span>
+        </div>
+        <div class="battle-talk-step">
+          <span class="battle-talk-label">WEDGE</span>
+          <span class="battle-talk-text">"Where Intacct tends to win in hospitality is when finance needs fast multi-property visibility and clean reporting without creating tons of COA accounts or heavy admin overhead."</span>
+        </div>
+        <div class="battle-talk-step">
+          <span class="battle-talk-label">LAND IT</span>
+          <span class="battle-talk-text">"So if your team is spending time consolidating, exporting, or reconciling reporting views… that's exactly what we help clean up."</span>
+        </div>
+      </div>
+
+      <div class="battle-landmine">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--danger);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:10px;">🧨 Landmines — Don't Say These</div>
+        <div class="landmine-row">
+          <div class="landmine-dont">❌ "NetSuite can't do that."</div>
+          <div class="landmine-do">✅ Say: "NetSuite can — it often just takes more configuration."</div>
+        </div>
+        <div class="landmine-row">
+          <div class="landmine-dont">❌ "Sage is always easier."</div>
+          <div class="landmine-do">✅ Say: "Intacct is typically more finance-led and faster to self-serve for accounting teams."</div>
+        </div>
+      </div>
+
+      <div class="battle-cta">
+        <strong>🏁 CLEAN CTA</strong>
+        "If we could show you a property-level P&L with drill-down, plus direct vs OTA margin visibility, and how to reduce spreadsheet consolidation — would it be worth a quick 15 minutes to benchmark your current process?"
+      </div>
+
+      <div class="battle-honest">
+        <div class="battle-honest-title">🧩 When NetSuite Might Be the Better Fit — Be Honest</div>
+        <div class="battle-honest-item">The buyer wants a single platform across many operational functions</div>
+        <div class="battle-honest-item">They need deep customization across departments</div>
+        <div class="battle-honest-item">They have larger internal admin/IT capacity to support ERP complexity</div>
+      </div>
+
+    </div>
+
+    <!-- BATTLE: McLEOD -->
+    <div class="section-block" id="sec-battle-mcleod">
+      <div class="panel-header">
+        <span class="panel-stepnum" style="background:var(--danger-dim);color:var(--danger);">⚔ BATTLE</span>
+        <span class="panel-title">Sage Intacct vs McLeod Accounting</span>
+        <span class="panel-hint">Use when prospect mentions McLeod or "our accounting is tied to our TMS"</span>
+      </div>
+
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:10px 14px;">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:7px;">Use When They Say</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+          <span style="background:var(--danger-dim);border:1px solid var(--danger);color:var(--danger);font-size:10px;padding:3px 9px;border-radius:12px;font-family:var(--mono);">"We use McLeod for accounting"</span>
+          <span style="background:var(--danger-dim);border:1px solid var(--danger);color:var(--danger);font-size:10px;padding:3px 9px;border-radius:12px;font-family:var(--mono);">"Our accounting is tied to our TMS"</span>
+          <span style="background:var(--danger-dim);border:1px solid var(--danger);color:var(--danger);font-size:10px;padding:3px 9px;border-radius:12px;font-family:var(--mono);">"We're in trucking/logistics"</span>
+          <span style="background:var(--danger-dim);border:1px solid var(--danger);color:var(--danger);font-size:10px;padding:3px 9px;border-radius:12px;font-family:var(--mono);">"Cleaner financial reporting across entities"</span>
+        </div>
+      </div>
+
+      <div class="battle-positioning">
+        <strong>⚡ 10-SECOND POSITIONING — SAY THIS</strong>
+        "McLeod is a strong operations/TMS platform for trucking and logistics. Sage Intacct typically wins when finance needs modern multi-entity reporting, faster close, and cleaner accounting controls — while still integrating to the operational systems that dispatch and billing teams rely on."
+      </div>
+
+      <div style="overflow-x:auto;">
+        <table class="battle-table">
+          <thead>
+            <tr>
+              <th style="width:22%">Accounting Area</th>
+              <th style="width:22%">Why It Matters</th>
+              <th class="win" style="width:28%">✅ Sage Intacct</th>
+              <th class="lose" style="width:28%">⚠ McLeod Reality</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="area">Finance-first reporting (entity/dept/location)</td>
+              <td>Leadership needs fast answers without spreadsheet work</td>
+              <td class="win">Dimensional reporting + drill-down built for finance teams</td>
+              <td class="lose">Finance reporting often needs extra work/exporting for executive views</td>
+            </tr>
+            <tr>
+              <td class="area">Multi-entity consolidation</td>
+              <td>Logistics groups may have multiple entities, terminals, or business lines</td>
+              <td class="win">Built for multi-entity consolidation, intercompany, and consolidated reporting</td>
+              <td class="lose">Complex consolidations may become more manual/process-heavy</td>
+            </tr>
+            <tr>
+              <td class="area">Close speed + repeatability</td>
+              <td>Close gets heavier with accruals, allocations, and reconciliations</td>
+              <td class="win">Accounting workflows designed to improve close consistency and control</td>
+              <td class="lose">Teams may rely on legacy processes tied to operational workflows and manual close steps</td>
+            </tr>
+            <tr>
+              <td class="area">Accounting controls + audit trail</td>
+              <td>Controllers need approval discipline and clean auditability</td>
+              <td class="win">Strong role-based controls, approvals, and finance governance</td>
+              <td class="lose">Finance teams may want deeper accounting workflow standardization</td>
+            </tr>
+            <tr>
+              <td class="area">Scalable financial planning/reporting</td>
+              <td>CFO/VP Finance need board-ready reporting as company grows</td>
+              <td class="win">Finance-led structure supports cleaner budget vs actual and scalable reporting</td>
+              <td class="lose">TMS-first systems can be excellent operationally, but finance reporting flexibility may be the gap</td>
+            </tr>
+            <tr>
+              <td class="area">Best-of-breed architecture</td>
+              <td>Ops and finance need different strengths but must stay connected</td>
+              <td class="win">Intacct serves as finance hub while McLeod remains operational system of record</td>
+              <td class="lose">Keeping everything in one system feels simpler, but finance depth/flexibility may be the tradeoff</td>
+            </tr>
+            <tr>
+              <td class="area">Self-service finance agility</td>
+              <td>Controllers need report changes without heavy technical support</td>
+              <td class="win">Finance users can build/drill reports faster</td>
+              <td class="lose">Reporting changes may depend on exports or specialized support knowledge</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:12px 14px;">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--accent2);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:10px;">🧭 McLeod Modernization Attack Plan</div>
+        <div class="battle-talk-step"><span class="battle-talk-label">STEP 1</span><span class="battle-talk-text">"McLeod is great at running trucking operations — dispatch, loads, and day-to-day execution."</span></div>
+        <div class="battle-talk-step"><span class="battle-talk-label">STEP 2</span><span class="battle-talk-text">"The question usually isn't whether McLeod can run operations. It's whether finance has the reporting, controls, and close process they need as complexity grows."</span></div>
+        <div class="battle-talk-step"><span class="battle-talk-label">QUALIFY</span><span class="battle-talk-text">"Are you optimizing for keeping accounting tied to operations, or for giving finance a cleaner, faster reporting and close process while staying integrated?"</span></div>
+        <div class="battle-talk-step"><span class="battle-talk-label">WEDGE</span><span class="battle-talk-text">"What we see often is: logistics teams keep McLeod for operations, but move finance to Intacct when the accounting team needs better visibility and less manual reporting."</span></div>
+      </div>
+
+      <div class="battle-wedge">
+        <div class="battle-wedge-title">🔍 Wedge Questions — Ask 1–2, then stop</div>
+        <div class="battle-wedge-q">"Do you use McLeod accounting mainly because it's convenient with operations — or because finance reporting works well today?"</div>
+        <div class="battle-wedge-q">"How many entities/terminals/business lines are you consolidating?"</div>
+        <div class="battle-wedge-q">"How long does month-end close take — and what's the most manual part?"</div>
+        <div class="battle-wedge-q">"How often does finance export to Excel to build leadership reporting?"</div>
+        <div class="battle-wedge-q">"If leadership asks for margin by terminal/customer/service line mid-month, can finance answer quickly?"</div>
+      </div>
+
+      <div class="battle-pain">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--accent);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:8px;">✅ Good Pain Signals — Listen for These</div>
+        <div class="battle-pain-item">"Operations runs well, but finance reporting is manual."</div>
+        <div class="battle-pain-item">"We export to Excel for board or leadership reporting."</div>
+        <div class="battle-pain-item">"Close takes too long because of reconciliations/allocations."</div>
+        <div class="battle-pain-item">"Consolidated reporting across entities is painful."</div>
+        <div class="battle-pain-item">"Finance can't drill into results fast enough."</div>
+        <div class="battle-pain-item">"McLeod is great for ops, but accounting is getting stretched."</div>
+      </div>
+
+      <div class="battle-talk">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--warn);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:10px;">🧠 Talk Track</div>
+        <div class="battle-talk-step"><span class="battle-talk-label">RESPECT</span><span class="battle-talk-text">"McLeod is a strong platform for trucking operations."</span></div>
+        <div class="battle-talk-step"><span class="battle-talk-label">WEDGE</span><span class="battle-talk-text">"Where finance teams start to feel pain is reporting, close, and consolidation — especially as the business adds entities, terminals, or reporting complexity."</span></div>
+        <div class="battle-talk-step"><span class="battle-talk-label">POSITION</span><span class="battle-talk-text">"The best fit can be McLeod for operations + Intacct for finance, if your priority is faster close, cleaner reporting, and stronger accounting controls."</span></div>
+      </div>
+
+      <div class="battle-landmine">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--danger);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:10px;">🧨 Landmines — Don't Say These</div>
+        <div class="landmine-row"><div class="landmine-dont">❌ "McLeod can't do accounting."</div><div class="landmine-do">✅ Say: "McLeod handles accounting for many teams — the question is whether it still fits your finance complexity."</div></div>
+        <div class="landmine-row"><div class="landmine-dont">❌ "You need to replace McLeod."</div><div class="landmine-do">✅ Say: "Many teams keep McLeod for ops and modernize finance separately."</div></div>
+        <div class="landmine-row"><div class="landmine-dont">❌ "One system is always better."</div><div class="landmine-do">✅ Say: "It depends whether you're optimizing for operational continuity or finance agility."</div></div>
+      </div>
+
+      <div class="battle-cta">
+        <strong>🏁 CLEAN CTA</strong>
+        "If we could show you how finance teams keep McLeod for operations while improving close speed, consolidated reporting, and drill-down visibility in Intacct — would it be worth 15 minutes to benchmark your current process?"
+      </div>
+
+      <div class="battle-honest">
+        <div class="battle-honest-title">🧩 When McLeod Might Be the Better Fit — Be Honest</div>
+        <div class="battle-honest-item">Finance reporting and consolidation needs are straightforward today</div>
+        <div class="battle-honest-item">The team strongly prefers keeping ops and accounting in one system</div>
+        <div class="battle-honest-item">Operational continuity outweighs finance modernization as the top priority</div>
+      </div>
+    </div>
+
+    <!-- BATTLE: M3 -->
+    <div class="section-block" id="sec-battle-m3">
+      <div class="panel-header">
+        <span class="panel-stepnum" style="background:var(--danger-dim);color:var(--danger);">⚔ BATTLE</span>
+        <span class="panel-title">Sage Intacct vs M3 Accounting</span>
+        <span class="panel-hint">Use when prospect mentions M3 or hotel portfolio consolidation pain</span>
+      </div>
+
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:10px 14px;">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:7px;">Use When They Say</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+          <span style="background:var(--danger-dim);border:1px solid var(--danger);color:var(--danger);font-size:10px;padding:3px 9px;border-radius:12px;font-family:var(--mono);">"We're on M3 / M3 Core"</span>
+          <span style="background:var(--danger-dim);border:1px solid var(--danger);color:var(--danger);font-size:10px;padding:3px 9px;border-radius:12px;font-family:var(--mono);">"Corporate reporting is hard"</span>
+          <span style="background:var(--danger-dim);border:1px solid var(--danger);color:var(--danger);font-size:10px;padding:3px 9px;border-radius:12px;font-family:var(--mono);">"Better consolidation across entities"</span>
+          <span style="background:var(--danger-dim);border:1px solid var(--danger);color:var(--danger);font-size:10px;padding:3px 9px;border-radius:12px;font-family:var(--mono);">"Faster close / less Excel for ownership reporting"</span>
+        </div>
+      </div>
+
+      <div class="battle-positioning">
+        <strong>⚡ 10-SECOND POSITIONING — SAY THIS</strong>
+        "M3 is purpose-built hotel accounting software with strong integrations and daily hotel workflows. Sage Intacct typically wins when an ownership/management group needs finance-led multi-entity consolidation, dimensional reporting across the portfolio, and stronger corporate controls — while still integrating to hotel systems."
+      </div>
+
+      <div style="overflow-x:auto;">
+        <table class="battle-table">
+          <thead>
+            <tr>
+              <th style="width:22%">Accounting Area</th>
+              <th style="width:22%">Why It Matters</th>
+              <th class="win" style="width:28%">✅ Sage Intacct</th>
+              <th class="lose" style="width:28%">⚠ M3 Reality</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="area">Multi-entity + portfolio consolidation</td>
+              <td>Ownership groups need consolidated financials across properties/entities</td>
+              <td class="win">Built for multi-entity setup + consolidation with configurable rules and entity inheritance</td>
+              <td class="lose">Strong for multi-property hotel accounting, but consolidation depth can vary by portfolio needs</td>
+            </tr>
+            <tr>
+              <td class="area">Dimensional reporting (property/dept/concept/region)</td>
+              <td>P&L views without building a massive chart of accounts</td>
+              <td class="win">Slice by location/group/concept/region and drill down fast</td>
+              <td class="lose">Strong hotel-specific views, but finance teams may want broader corporate slice-and-dice flexibility</td>
+            </tr>
+            <tr>
+              <td class="area">Speed to ownership/board-ready reporting</td>
+              <td>Owners want answers mid-month, not after close</td>
+              <td class="win">Finance-led reporting + drill-down reduces spreadsheet packaging</td>
+              <td class="lose">M3 provides daily snapshots and dashboards — strong operationally, but portfolio packaging can require extra work</td>
+            </tr>
+            <tr>
+              <td class="area">Close process + repeatability</td>
+              <td>Portfolio close gets heavy: allocations, intercompany, reconciliations</td>
+              <td class="win">Standardized finance workflows; multi-entity rules reduce manual repeat work</td>
+              <td class="lose">Complexity can grow as entity structures and reporting demands expand</td>
+            </tr>
+            <tr>
+              <td class="area">Controls + audit trail + role separation</td>
+              <td>Mgmt co. vs ownership vs property staff access needs</td>
+              <td class="win">Strong role-based controls across entities/processes (corporate governance)</td>
+              <td class="lose">Controls depend on configuration and how broadly M3 is used across finance functions</td>
+            </tr>
+            <tr>
+              <td class="area">Integration strategy (keep hotel systems)</td>
+              <td>Must keep PMS/night audit/POS/payroll connected</td>
+              <td class="win">Fits "finance hub" model integrating with hotel ecosystem</td>
+              <td class="lose">M3 highlights seamless hotel integrations — strong for ops, but finance hub flexibility varies</td>
+            </tr>
+            <tr>
+              <td class="area">Corporate finance scaling</td>
+              <td>As groups grow, finance needs more entity complexity and governance</td>
+              <td class="win">Multi-entity design supports scaling finance across growing portfolios</td>
+              <td class="lose">M3 excels at hotel ops/accounting workflows — may be exactly right for some groups</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:12px 14px;">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--accent2);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:10px;">🎯 Integration-First Attack Plan</div>
+        <div class="battle-talk-step"><span class="battle-talk-label">VALIDATE</span><span class="battle-talk-text">"M3 is built for hotels — especially daily hotel accounting and PMS/night audit integration."</span></div>
+        <div class="battle-talk-step"><span class="battle-talk-label">SEPARATE</span><span class="battle-talk-text">"For ownership/management groups, the question becomes: can finance consolidate and report across the portfolio fast enough for decisions — without Excel packaging?"</span></div>
+        <div class="battle-talk-step"><span class="battle-talk-label">QUALIFY</span><span class="battle-talk-text">"Are you optimizing for hotel workflow convenience, or for portfolio-level finance speed and visibility for ownership?"</span></div>
+        <div class="battle-talk-step"><span class="battle-talk-label">POSITION</span><span class="battle-talk-text">"Many groups keep M3 for hotel workflow + add Intacct as the finance reporting/consolidation layer."</span></div>
+      </div>
+
+      <div class="battle-wedge">
+        <div class="battle-wedge-title">🔍 Wedge Questions — Ask 1–2, then stop</div>
+        <div class="battle-wedge-q">"How many legal entities and properties are you consolidating — and how manual is that today?"</div>
+        <div class="battle-wedge-q">"Can you produce a portfolio P&L by region/brand/management vs ownership without Excel?"</div>
+        <div class="battle-wedge-q">"How quickly can ownership get answers mid-month — same day, same week, or after close?"</div>
+        <div class="battle-wedge-q">"Are you satisfied with reporting flexibility when leadership asks for a new cut of the data?"</div>
+        <div class="battle-wedge-q">"Do you want to keep M3 as the hotel system and strengthen corporate finance reporting on top?"</div>
+      </div>
+
+      <div class="battle-pain">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--accent);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:8px;">✅ Good Pain Signals — Listen for These</div>
+        <div class="battle-pain-item">"M3 is great for daily hotel numbers, but portfolio reporting is still manual."</div>
+        <div class="battle-pain-item">"We export to Excel to build ownership packages."</div>
+        <div class="battle-pain-item">"Consolidation takes too long across entities."</div>
+        <div class="battle-pain-item">"Every new reporting request becomes a project."</div>
+        <div class="battle-pain-item">"Leadership wants regional/brand views mid-month and we can't get them fast."</div>
+        <div class="battle-pain-item">"We need stronger controls and consistency across properties."</div>
+      </div>
+
+      <div class="battle-talk">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--warn);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:10px;">🧠 Talk Track</div>
+        <div class="battle-talk-step"><span class="battle-talk-label">RESPECT</span><span class="battle-talk-text">"M3 is hospitality-built and strong for daily hotel accounting and integrations."</span></div>
+        <div class="battle-talk-step"><span class="battle-talk-label">WEDGE</span><span class="battle-talk-text">"For ownership groups, the pain often shows up at the portfolio level — consolidation, reporting flexibility, and getting board-ready views fast."</span></div>
+        <div class="battle-talk-step"><span class="battle-talk-label">POSITION</span><span class="battle-talk-text">"If your priority is finance-led multi-entity reporting — property/group/concept/region views with drill-down — Intacct is built for that."</span></div>
+      </div>
+
+      <div class="battle-landmine">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--danger);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:10px;">🧨 Landmines — Don't Say These</div>
+        <div class="landmine-row"><div class="landmine-dont">❌ "M3 can't do reporting."</div><div class="landmine-do">✅ Say: "M3 is strong for hotel workflows — Intacct is typically stronger for portfolio finance consolidation and flexible dimensions."</div></div>
+        <div class="landmine-row"><div class="landmine-dont">❌ "You need to replace M3."</div><div class="landmine-do">✅ Say: "Many groups keep hotel systems in place and modernize finance reporting where needed."</div></div>
+      </div>
+
+      <div class="battle-cta">
+        <strong>🏁 CLEAN CTA</strong>
+        "If we could show you portfolio-level reporting with drill-down — by property, department, concept, and region — and a path to reduce Excel consolidation while staying integrated with hotel systems, would it be worth 15 minutes to benchmark your current process?"
+      </div>
+
+      <div class="battle-honest">
+        <div class="battle-honest-title">🧩 When M3 Might Be the Better Fit — Be Honest</div>
+        <div class="battle-honest-item">The group wants a hospitality-specific platform to standardize hotel back-office workflows</div>
+        <div class="battle-honest-item">PMS/night audit-driven daily accounting is the top priority</div>
+        <div class="battle-honest-item">Portfolio reporting requirements are straightforward and already satisfied in M3</div>
+      </div>
+    </div>
+
+    <!-- BATTLE: DYNAMICS GP -->
+    <div class="section-block" id="sec-battle-gp">
+      <div class="panel-header">
+        <span class="panel-stepnum" style="background:var(--danger-dim);color:var(--danger);">⚔ BATTLE</span>
+        <span class="panel-title">Sage Intacct vs Dynamics GP</span>
+        <span class="panel-hint">Use when prospect mentions Great Plains, on-prem, or GP sunset</span>
+      </div>
+
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:10px 14px;">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:7px;">Use When They Say</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+          <span style="background:var(--danger-dim);border:1px solid var(--danger);color:var(--danger);font-size:10px;padding:3px 9px;border-radius:12px;font-family:var(--mono);">"We're on Great Plains / Dynamics GP"</span>
+          <span style="background:var(--danger-dim);border:1px solid var(--danger);color:var(--danger);font-size:10px;padding:3px 9px;border-radius:12px;font-family:var(--mono);">"We're on an older on-prem system"</span>
+          <span style="background:var(--danger-dim);border:1px solid var(--danger);color:var(--danger);font-size:10px;padding:3px 9px;border-radius:12px;font-family:var(--mono);">"Thinking about Business Central"</span>
+          <span style="background:var(--danger-dim);border:1px solid var(--danger);color:var(--danger);font-size:10px;padding:3px 9px;border-radius:12px;font-family:var(--mono);">"Cleaner reporting across entities"</span>
+        </div>
+      </div>
+
+      <div style="background:var(--warn-dim);border:1px solid var(--warn);border-radius:5px;padding:10px 14px;display:flex;gap:10px;align-items:flex-start;">
+        <span style="font-size:16px;flex-shrink:0;">⏳</span>
+        <div>
+          <div style="font-family:var(--mono);font-size:9px;color:var(--warn);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;">GP Sunset Timeline — Use as a calm planning trigger</div>
+          <div style="font-size:11px;color:var(--text-mid);line-height:1.6;">Microsoft has announced: <strong style="color:var(--warn);">End of product support Dec 31, 2029</strong> · <strong style="color:var(--warn);">End of security patches Apr 30, 2031.</strong> Don't fear sell — use this as: "Smart teams plan before they're forced."</div>
+        </div>
+      </div>
+
+      <div class="battle-positioning">
+        <strong>⚡ 10-SECOND POSITIONING — SAY THIS</strong>
+        "Dynamics GP has been a reliable on-prem system for years. Sage Intacct typically wins when finance needs modern, multi-entity reporting, faster close, and real-time visibility — without heavy IT overhead — especially as organizations plan for GP's sunset timeline."
+      </div>
+
+      <div style="overflow-x:auto;">
+        <table class="battle-table">
+          <thead>
+            <tr>
+              <th style="width:22%">Accounting Area</th>
+              <th style="width:22%">Why It Matters</th>
+              <th class="win" style="width:28%">✅ Sage Intacct</th>
+              <th class="lose" style="width:28%">⚠ GP Reality</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="area">Modern finance reporting (property/entity/dept)</td>
+              <td>Hospitality needs fast visibility by property, department, channel</td>
+              <td class="win">Dimensions + drill-down reporting without spreadsheet gymnastics</td>
+              <td class="lose">Reporting often becomes Excel-heavy as questions grow</td>
+            </tr>
+            <tr>
+              <td class="area">Multi-entity consolidation</td>
+              <td>Ownership groups + management entities require clean consolidation</td>
+              <td class="win">Multi-entity consolidation built for finance teams</td>
+              <td class="lose">Possible, but can be harder to scale cleanly across structures</td>
+            </tr>
+            <tr>
+              <td class="area">Close speed + repeatability</td>
+              <td>Close gets heavier with accruals/allocations/intercompany</td>
+              <td class="win">Designed for faster close + consistent processes</td>
+              <td class="lose">Close often depends on manual steps + legacy workflows</td>
+            </tr>
+            <tr>
+              <td class="area">Integrations (PMS/POS/payroll/procurement)</td>
+              <td>Hospitality data lives in multiple systems</td>
+              <td class="win">Best-of-breed finance hub model fits modern stacks</td>
+              <td class="lose">Integrations can be older/fragile or require more technical effort</td>
+            </tr>
+            <tr>
+              <td class="area">Cloud agility + lower IT overhead</td>
+              <td>Teams want quicker changes and fewer upgrades/servers</td>
+              <td class="win">Cloud-native finance platform</td>
+              <td class="lose">GP is typically on-prem and more maintenance-heavy</td>
+            </tr>
+            <tr>
+              <td class="area">Future-proofing + risk reduction</td>
+              <td>Roadmap matters for support, updates, and security</td>
+              <td class="win">Modern platform investment aligned to cloud finance</td>
+              <td class="lose">Product support ends Dec 31, 2029 · Security patches end Apr 30, 2031</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:12px 14px;">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--accent2);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:10px;">🎯 Attack Plan — Position Intacct vs the Microsoft push to BC</div>
+        <div class="battle-talk-step"><span class="battle-talk-label">TRIGGER</span><span class="battle-talk-text">"Totally understand staying on GP — it's stable. The only reason it's coming up more now is Microsoft has published the support runway through 2029/2031, so teams are mapping what their next platform should be."</span></div>
+        <div class="battle-talk-step"><span class="battle-talk-label">PATH A</span><span class="battle-talk-text">"Stay Microsoft and move to Business Central — Microsoft provides a migration path and tooling."</span></div>
+        <div class="battle-talk-step"><span class="battle-talk-label">PATH B</span><span class="battle-talk-text">"Choose a finance-first platform built for accounting agility: faster close, cleaner reporting, multi-entity visibility, easier drill-down."</span></div>
+        <div class="battle-talk-step"><span class="battle-talk-label">QUALIFY</span><span class="battle-talk-text">"Are you optimizing for staying in Microsoft's ecosystem, or for the fastest, cleanest finance operation regardless of vendor?"</span></div>
+      </div>
+
+      <div class="battle-wedge">
+        <div class="battle-wedge-title">🔍 Wedge Questions — Ask 1–2, then stop</div>
+        <div class="battle-wedge-q">"How many entities/properties are you consolidating today?"</div>
+        <div class="battle-wedge-q">"How long does month-end close take — and what's the most manual part?"</div>
+        <div class="battle-wedge-q">"How often do you export to Excel to get property-level reporting?"</div>
+        <div class="battle-wedge-q">"When leadership asks a question mid-month, can finance answer it quickly?"</div>
+        <div class="battle-wedge-q">"Is your goal to modernize finance workflows — or mainly to replace GP because of roadmap?"</div>
+      </div>
+
+      <div class="battle-pain">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--accent);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:8px;">✅ Good Pain Signals — Listen for These</div>
+        <div class="battle-pain-item">"We rely on Excel for reporting."</div>
+        <div class="battle-pain-item">"It takes too long to close."</div>
+        <div class="battle-pain-item">"Reporting by property/department takes effort."</div>
+        <div class="battle-pain-item">"Integrations feel brittle or require too much IT."</div>
+        <div class="battle-pain-item">"We don't have real-time visibility."</div>
+        <div class="battle-pain-item">"We know we need to modernize before the deadline hits."</div>
+      </div>
+
+      <div class="battle-talk">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--warn);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:10px;">🧠 Talk Track</div>
+        <div class="battle-talk-step"><span class="battle-talk-label">RESPECT</span><span class="battle-talk-text">"GP has been a dependable system for a long time."</span></div>
+        <div class="battle-talk-step"><span class="battle-talk-label">WEDGE</span><span class="battle-talk-text">"Now that Microsoft has announced the support runway (2029/2031), teams are evaluating what's next."</span></div>
+        <div class="battle-talk-step"><span class="battle-talk-label">POSITION</span><span class="battle-talk-text">"If your priority is finance-led reporting, multi-entity visibility, and a faster close with less manual work, Intacct is built for that."</span></div>
+      </div>
+
+      <div class="battle-landmine">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--danger);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:10px;">🧨 Landmines — Don't Say These</div>
+        <div class="landmine-row"><div class="landmine-dont">❌ "GP is dead tomorrow."</div><div class="landmine-do">✅ Say: "There's a runway, but smart teams plan before they're forced."</div></div>
+        <div class="landmine-row"><div class="landmine-dont">❌ "Business Central can't work."</div><div class="landmine-do">✅ Say: "BC may be the best fit if staying in Microsoft matters most."</div></div>
+      </div>
+
+      <div class="battle-cta">
+        <strong>🏁 CLEAN CTA</strong>
+        "If we could show you property-level reporting with drill-down, plus how finance teams reduce spreadsheet consolidation and speed up close during modernization — would it be worth 15 minutes to benchmark what your next-stage finance stack could look like?"
+      </div>
+
+      <div class="battle-honest">
+        <div class="battle-honest-title">🧩 When GP / Business Central Might Be the Better Fit — Be Honest</div>
+        <div class="battle-honest-item">Staying in the Microsoft ecosystem is a firm organizational requirement</div>
+        <div class="battle-honest-item">They want a broad ERP suite across many operational functions, not just finance</div>
+        <div class="battle-honest-item">Internal IT has strong Microsoft expertise and prefers supporting a familiar stack</div>
+      </div>
+    </div>
+
+
+  </div>
+  <div class="rightpanel">
+
+    <div class="rp-section">
+      <div class="rp-title">System Reference</div>
+      <div class="ref-row"><span class="ref-sys">QB Desktop</span><span class="ref-angle">Job profitability + manual close. Reporting lives in Excel.</span></div>
+      <div class="ref-row"><span class="ref-sys">QB Online</span><span class="ref-angle">Multi-location P&L + job-level profitability gap.</span></div>
+      <div class="ref-row"><span class="ref-sys">NetSuite</span><span class="ref-angle">Renewal pricing + customization cost. Ask about contract.</span></div>
+      <div class="ref-row"><span class="ref-sys">Sage 50/100</span><span class="ref-angle">Natural upgrade story. Scale and reporting gap.</span></div>
+      <div class="ref-row"><span class="ref-sys">Dynamics GP</span><span class="ref-angle">Aging platform. Ask who manages the server.</span></div>
+      <div class="ref-row"><span class="ref-sys">Spreadsheets</span><span class="ref-angle">Start with 'what's most manual' and let them vent.</span></div>
+    </div>
+
+    <div class="rp-section">
+      <div class="rp-title">The Rules (Non-Negotiable)</div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <div style="font-size:11px;color:var(--text-mid);padding:6px 10px;background:var(--surface2);border-radius:4px;border-left:2px solid var(--accent2);">Never skip the title confirmation in Step 1.</div>
+        <div style="font-size:11px;color:var(--text-mid);padding:6px 10px;background:var(--surface2);border-radius:4px;border-left:2px solid var(--accent2);">Ask one question at a time.</div>
+        <div style="font-size:11px;color:var(--text-mid);padding:6px 10px;background:var(--surface2);border-radius:4px;border-left:2px solid var(--accent);">Silence is your weapon. After you ask, stop talking.</div>
+        <div style="font-size:11px;color:var(--text-mid);padding:6px 10px;background:var(--surface2);border-radius:4px;border-left:2px solid var(--accent2);">Sound like a human — not a robot reading a script.</div>
+        <div style="font-size:11px;color:var(--text-mid);padding:6px 10px;background:var(--surface2);border-radius:4px;border-left:2px solid var(--warn);">Every call ends with a clear next step.</div>
+        <div style="font-size:11px;color:var(--text-mid);padding:6px 10px;background:var(--surface2);border-radius:4px;border-left:2px solid var(--border);">Fallback: "What part of your finance process is the most manual?"</div>
+      </div>
+    </div>
+
+    <div class="rp-section">
+      <div class="rp-title">Social Proof Pattern</div>
+      <div style="font-size:11px;color:var(--text-mid);line-height:1.65;background:var(--surface2);border-radius:5px;padding:10px 12px;border:1px solid var(--border);">
+        "[Pain statement] — we worked with a [vertical] company dealing with the same thing. They [result]. Would it be worth 20 minutes to see if we could do something similar for you?"
+      </div>
+      <div style="margin-top:8px;font-size:10px;color:var(--text-dim);font-style:italic;">💡 Say 'a company like yours' — don't name the customer unless asked.</div>
+    </div>
+
+
+  </div>
+</div>
+
+<script>
+  // ── NAVIGATION ──
+  function showSection(id) {
+    document.querySelectorAll('.section-block').forEach(s => s.classList.remove('active'));
+    document.getElementById('sec-' + id).classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+  }
+
+  // ── SETUP CHANGE ──
+  const verticalPains = {
+    trucking: { label: 'VERTICAL: TRUCKING', text: 'Specifically with trucking — job costing by load or route is almost always manual. Most owners know their total revenue, but they can\'t tell you which lanes are making money and which are bleeding. Is that a familiar problem?' },
+    carwash: { label: 'VERTICAL: CAR WASHES', text: 'With car washes specifically — if you\'re running multiple locations, getting a clean P&L by site is usually a nightmare. The membership revenue is in one system, the car count is in another, and finance is reconciling it all manually. Does that sound right?' },
+    landscaping: { label: 'VERTICAL: LANDSCAPING', text: 'With landscaping — job profitability is almost never tracked at the job level. You know what you billed, but after labor and materials, you don\'t really know what you made on that contract until it\'s too late to fix it.' },
+    pest: { label: 'VERTICAL: PEST CONTROL', text: 'Pest control companies we talk to — route profitability is invisible. You\'re running recurring service contracts, but finance can\'t tell you which routes are profitable and which ones your team is subsidizing.' },
+    auto: { label: 'VERTICAL: AUTO SERVICES', text: 'With auto services — the DMS and the accounting system don\'t talk to each other, so someone\'s manually reconciling parts vs. labor every month. That gap usually means the margin picture is always a few weeks behind.' },
+    restaurant: { label: 'VERTICAL: RESTAURANTS', text: 'With restaurants — unit-level P&L is usually the thing that breaks first. You might have a great overall top line, but you don\'t know which location is dragging margins until month-end, and by then it\'s already happened.' },
+    hospitality: { label: 'VERTICAL: HOTELS / HOSPITALITY', text: 'With hospitality — property-level reporting is almost always the gap. OTA reconciliation is manual, owner reporting takes days to prep, and the picture leadership sees is always a few steps behind what\'s actually happening at the property.' },
+    cannabis: { label: 'VERTICAL: CANNABIS', text: 'Cannabis finance is its own world — 280E compliance, seed-to-sale reconciliation, and multi-license reporting across states. Most accounting systems aren\'t built for it, so teams are stitching it together manually every month.' },
+    fitness: { label: 'VERTICAL: FITNESS / WELLNESS', text: 'With fitness — you\'ve got membership revenue, PT, retail, and maybe multiple locations, all running through different systems. Finance ends up reconciling it manually every close, and the margin picture by revenue line is usually a guess.' },
+    smb: { label: 'VERTICAL: GENERAL SMB', text: 'What we hear across most companies your size is that the system that got you here isn\'t built for where you\'re going — more complexity, more reporting demands, same manual workarounds.' }
+  };
+
+  const systemTQMap = {
+    qbd: 'tq-qbd', qbo: 'tq-qbo', netsuite: 'tq-netsuite',
+    sage50: 'tq-sage50', dynamics: 'tq-dynamics', sheets: 'tq-sheets', unknown: 'tq-unknown'
+  };
+
+  const painCardMap = {
+    jobprofit: ['vp-jobprofit','pp-jobprofit'],
+    multiloc: ['vp-multiloc','pp-multiloc'],
+    closeexcel: ['vp-closeexcel','pp-closeexcel'],
+    visibility: ['vp-visibility','pp-visibility'],
+    multientity: ['vp-multientity','pp-multientity'],
+    scaling: ['vp-scaling','pp-scaling']
+  };
+
+  function onSetupChange() {
+    const vert = document.getElementById('selVertical').value;
+    const sys = document.getElementById('selSystem').value;
+    const pain = document.getElementById('selPain').value;
+
+    // highlight pain cards
+    document.querySelectorAll('[id^="vp-"]:not(#vp-addon), [id^="pp-"]').forEach(c => c.classList.remove('highlighted'));
+    if (pain && painCardMap[pain]) {
+      painCardMap[pain].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('highlighted');
+      });
+    }
+
+    // highlight system transition question
+    document.querySelectorAll('[id^="tq-"]').forEach(c => c.classList.remove('highlighted'));
+    if (sys && systemTQMap[sys]) {
+      const tqEl = document.getElementById(systemTQMap[sys]);
+      if (tqEl) tqEl.classList.add('highlighted');
+    }
+
+    // vertical pain add-on
+    const addon = document.getElementById('vp-addon');
+    if (vert && verticalPains[vert]) {
+      addon.classList.add('visible');
+      document.getElementById('vp-addon-label').textContent = verticalPains[vert].label;
+      document.getElementById('vp-addon-text').textContent = verticalPains[vert].text;
+    } else {
+      addon.classList.remove('visible');
+    }
+
+  }
+
+  // ── OBJECTIONS ──
+  function toggleObj(el) {
+    el.classList.toggle('open');
+  }
+
+  // ── KPI CARDS ──
+  function toggleKpi(id) {
+    const card = document.getElementById(id);
+    card.classList.toggle('open');
+    card.querySelector('.disc-kpi-header').classList.toggle('open');
+  }
+
+  // ── TIMER ──
+  let timerRunning = false;
+  let timerSeconds = 0;
+  let timerInterval = null;
+
+  function toggleTimer() {
+    if (timerRunning) {
+      clearInterval(timerInterval);
+      timerRunning = false;
+      document.getElementById('btnTimer').textContent = 'START';
+      document.getElementById('btnTimer').classList.remove('active');
+    } else {
+      timerInterval = setInterval(() => {
+        timerSeconds++;
+        updateTimerDisplay();
+      }, 1000);
+      timerRunning = true;
+      document.getElementById('btnTimer').textContent = 'PAUSE';
+      document.getElementById('btnTimer').classList.add('active');
+    }
+  }
+
+  function resetTimer() {
+    clearInterval(timerInterval);
+    timerRunning = false;
+    timerSeconds = 0;
+    document.getElementById('btnTimer').textContent = 'START';
+    document.getElementById('btnTimer').classList.remove('active');
+    updateTimerDisplay();
+  }
+
+  function updateTimerDisplay() {
+    const el = document.getElementById('timerDisplay');
+    el.textContent = formatTime(timerSeconds);
+    el.className = 'timer-value' + (timerSeconds > 300 ? ' warning' : '');
+  }
+
+  function formatTime(s) {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return m + ':' + String(sec).padStart(2, '0');
+  }
+
+</script>
+</body>
+</html>
