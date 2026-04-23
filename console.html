@@ -4,12 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sage Intacct · BDR Call Console</title>
-<script>
-  // Auth guard — redirect to login if not authenticated
-  if (sessionStorage.getItem('si_bdr_auth') !== '1') {
-    window.location.replace('./index.html');
-  }
-</script>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -99,34 +93,7 @@
   select:focus { border-color: var(--accent2); }
   select option { background: var(--surface2); }
 
-  .timer-display {
-    margin-left: auto;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  .timer-value {
-    font-family: var(--mono);
-    font-size: 20px;
-    font-weight: 600;
-    color: var(--accent);
-    letter-spacing: 0.05em;
-  }
-  .timer-value.warning { color: var(--warn); }
-  .btn-timer {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--text-mid);
-    font-family: var(--mono);
-    font-size: 10px;
-    padding: 5px 12px;
-    border-radius: 4px;
-    cursor: pointer;
-    letter-spacing: 0.08em;
-    transition: all 0.15s;
-  }
-  .btn-timer:hover { border-color: var(--accent); color: var(--accent); }
-  .btn-timer.active { background: var(--accent); color: #000; border-color: var(--accent); }
+
 
   /* ── LAYOUT ── */
   .main {
@@ -189,6 +156,47 @@
     color: var(--text-dim);
     padding: 1px 6px;
     border-radius: 10px;
+  }
+
+  .nav-indicator {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: none;
+    margin-left: 6px;
+  }
+  .nav-indicator.active-vert {
+    display: inline-block;
+    background: var(--accent);
+    box-shadow: 0 0 5px var(--accent);
+    animation: pulse-dot 2s infinite;
+  }
+  .nav-indicator.active-sys {
+    display: inline-block;
+    background: var(--accent2);
+    box-shadow: 0 0 5px var(--accent2);
+    animation: pulse-dot 2s infinite;
+  }
+  .nav-indicator.active-pain {
+    display: inline-block;
+    background: var(--danger);
+    box-shadow: 0 0 5px var(--danger);
+    animation: pulse-dot 2s infinite;
+  }
+  .nav-indicator.active-all {
+    display: inline-block;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+    animation: pulse-dot-strong 1.5s infinite;
+  }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(0.85); }
+  }
+  @keyframes pulse-dot-strong {
+    0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 8px var(--accent); }
+    50% { opacity: 0.8; transform: scale(1.2); box-shadow: 0 0 14px var(--accent); }
   }
   .nav-divider { height: 1px; background: var(--border); margin: 8px 16px; }
 
@@ -778,12 +786,6 @@
       <option value="scaling">System Outgrown / Scaling</option>
     </select>
   </div>
-
-  <div class="timer-display">
-    <div class="timer-value" id="timerDisplay">0:00</div>
-    <button class="btn-timer" id="btnTimer" onclick="toggleTimer()">START</button>
-    <button class="btn-timer" onclick="resetTimer()">RESET</button>
-  </div>
 </div>
 
 <!-- MAIN LAYOUT -->
@@ -797,23 +799,20 @@
       <span class="nav-label">Opener</span>
       <span class="nav-badge">LOCKED</span>
     </div>
-    <div class="nav-item" onclick="showSection('valueprop')">
+    <div class="nav-item" id="nav-painprop" onclick="showSection('painprop')">
       <span class="nav-step">2</span>
-      <span class="nav-label">Value Prop</span>
-      <span class="nav-badge">FLEX</span>
-    </div>
-    <div class="nav-item" onclick="showSection('painprop')">
-      <span class="nav-step">3</span>
       <span class="nav-label">Pain Prop</span>
-      <span class="nav-badge">FLEX</span>
+      <span class="nav-indicator" id="ind-painprop"></span>
+      <span class="nav-badge">LEAD</span>
     </div>
-    <div class="nav-item" onclick="showSection('transition')">
-      <span class="nav-step">4</span>
+    <div class="nav-item" id="nav-transition" onclick="showSection('transition')">
+      <span class="nav-step">3</span>
       <span class="nav-label">Transition Q</span>
+      <span class="nav-indicator" id="ind-transition"></span>
       <span class="nav-badge">FLEX</span>
     </div>
     <div class="nav-item" onclick="showSection('objections')">
-      <span class="nav-step">4.5</span>
+      <span class="nav-step">4</span>
       <span class="nav-label">Objections</span>
       <span class="nav-badge">24</span>
     </div>
@@ -948,118 +947,71 @@
       </div>
     </div>
 
-    <!-- VALUE PROP -->
-    <div class="section-block" id="sec-valueprop">
-      <div class="panel-header">
-        <span class="panel-stepnum">STEP 2</span>
-        <span class="panel-title">Value Prop</span>
-        <span class="panel-hint">Highlighted row = best match for selected pain</span>
-      </div>
-
-      <div id="vp-jobprofit" class="script-card">
-        <div class="card-top">
-          <span class="card-tag tag-flex">JOB / UNIT PROFIT</span>
-          <span class="card-script">"We work with companies managing multiple jobs, routes, or locations who have no idea which ones are actually making money. We give finance teams real-time job and unit profitability — without living in spreadsheets."</span>
-        </div>
-        <div class="card-note">PAIN: No Job / Unit Profitability</div>
-      </div>
-      <div id="vp-multiloc" class="script-card">
-        <div class="card-top">
-          <span class="card-tag tag-flex">MULTI-LOCATION</span>
-          <span class="card-script">"We work with companies running multiple locations who can't get a P&L by location without a manual export. We make that a live dashboard — so ownership can see every unit in real time."</span>
-        </div>
-        <div class="card-note">PAIN: Multi-Location Reporting</div>
-      </div>
-      <div id="vp-closeexcel" class="script-card">
-        <div class="card-top">
-          <span class="card-tag tag-flex">MANUAL CLOSE</span>
-          <span class="card-script">"We work with finance teams where month-end close is still a multi-week Excel project. We automate that — so your team closes faster and leadership gets reports without waiting."</span>
-        </div>
-        <div class="card-note">PAIN: Manual Close / Excel</div>
-      </div>
-      <div id="vp-visibility" class="script-card">
-        <div class="card-top">
-          <span class="card-tag tag-flex">REAL-TIME VISIBILITY</span>
-          <span class="card-script">"We work with CFOs and Controllers who can't answer a cash or margin question without running a report first. We give leadership live dashboards — so the answer is always there, not 48 hours away."</span>
-        </div>
-        <div class="card-note">PAIN: No Real-Time Visibility</div>
-      </div>
-      <div id="vp-multientity" class="script-card">
-        <div class="card-top">
-          <span class="card-tag tag-flex">MULTI-ENTITY</span>
-          <span class="card-script">"We work with companies managing multiple entities or LLCs who are consolidating in spreadsheets every month. We automate consolidations — one view across all entities, no manual work."</span>
-        </div>
-        <div class="card-note">PAIN: Multi-Entity Consolidation</div>
-      </div>
-      <div id="vp-scaling" class="script-card">
-        <div class="card-top">
-          <span class="card-tag tag-flex">SCALING / OUTGROWN</span>
-          <span class="card-script">"We work with companies that've grown past what QuickBooks or their current system can handle — more complexity, same manual workarounds. We're built for that next stage."</span>
-        </div>
-        <div class="card-note">PAIN: System Outgrown</div>
-      </div>
-    </div>
-
     <!-- PAIN PROP -->
     <div class="section-block" id="sec-painprop">
       <div class="panel-header">
-        <span class="panel-stepnum">STEP 3</span>
+        <span class="panel-stepnum" style="background:var(--danger-dim);color:var(--danger);border:1px solid var(--danger);">STEP 2 · LEAD WITH PAIN</span>
         <span class="panel-title">Pain Prop</span>
-        <span class="panel-hint">Layer pain on top of value — or lead with pain if they're defensive</span>
+        <span class="panel-hint">Pick the highlighted card — deliver it, then pause. Let it land.</span>
+      </div>
+
+      <div style="background:var(--danger-dim);border:1px solid var(--danger);border-radius:5px;padding:9px 13px;margin-bottom:4px;">
+        <span style="font-family:var(--mono);font-size:9px;color:var(--danger);letter-spacing:0.1em;text-transform:uppercase;">Why lead with pain: </span>
+        <span style="font-size:11px;color:var(--text-mid);">People move away from pain faster than they move toward value. Name what's breaking before you describe the fix.</span>
       </div>
 
       <div id="pp-jobprofit" class="script-card">
         <div class="card-top">
-          <span class="card-tag tag-flex">JOB / UNIT PROFIT</span>
+          <span class="card-tag tag-objection">JOB / UNIT PROFIT</span>
           <span class="card-script">"A lot of companies we talk to in trucking, landscaping, and auto know their total revenue — but have no idea which jobs, routes, or bays are actually profitable. It's only when they look back at year-end that they realize some of it was costing them money."</span>
         </div>
       </div>
       <div id="pp-multiloc" class="script-card">
         <div class="card-top">
-          <span class="card-tag tag-flex">MULTI-LOCATION</span>
+          <span class="card-tag tag-objection">MULTI-LOCATION</span>
           <span class="card-script">"The pattern we see: companies with multiple locations run QuickBooks at each one, then someone spends a week consolidating everything into Excel before ownership can see the full picture. By the time the report is ready, the numbers are already a month old."</span>
         </div>
       </div>
       <div id="pp-closeexcel" class="script-card">
         <div class="card-top">
-          <span class="card-tag tag-flex">MANUAL CLOSE</span>
+          <span class="card-tag tag-objection">MANUAL CLOSE</span>
           <span class="card-script">"What we hear is that month-end becomes all-hands-on-deck — the Controller is living in spreadsheets, reporting takes two weeks, and leadership is making decisions off numbers that are 30 days stale. It's not a people problem. It's a systems problem."</span>
         </div>
       </div>
       <div id="pp-visibility" class="script-card">
         <div class="card-top">
-          <span class="card-tag tag-flex">REAL-TIME VISIBILITY</span>
+          <span class="card-tag tag-objection">REAL-TIME VISIBILITY</span>
           <span class="card-script">"We talk to CFOs who can't answer 'what's our cash position today' without running a report first. Or ownership asks 'how's this location doing' and it takes two days to pull together. At your stage of growth, that lag costs you."</span>
         </div>
       </div>
       <div id="pp-multientity" class="script-card">
         <div class="card-top">
-          <span class="card-tag tag-flex">MULTI-ENTITY</span>
+          <span class="card-tag tag-objection">MULTI-ENTITY</span>
           <span class="card-script">"We talk to finance teams managing two, three, five entities — each one closing separately, then someone consolidating in Excel across all of them. It works until it doesn't. One mistake in the wrong cell and the whole thing is off."</span>
         </div>
       </div>
       <div id="pp-scaling" class="script-card">
         <div class="card-top">
-          <span class="card-tag tag-flex">SCALING</span>
+          <span class="card-tag tag-objection">SCALING / OUTGROWN</span>
           <span class="card-script">"We talk to Controllers running companies that've grown two or three times in the last few years — more locations, more complexity, more entities — on a system that was built for a much simpler version of the business."</span>
         </div>
       </div>
 
       <!-- Vertical Pain Add-On -->
-      <div class="panel-header" style="margin-top:8px;">
-        <span class="panel-stepnum" style="background:var(--warn-dim);color:var(--warn);">VERTICAL ADD-ON</span>
-        <span class="panel-title" style="font-size:13px;">Layer this after pain prop</span>
+      <div class="panel-header" style="margin-top:12px;">
+        <span class="panel-stepnum" style="background:var(--warn-dim);color:var(--warn);border:1px solid var(--warn);">⚡ VERTICAL ADD-ON</span>
+        <span class="panel-title" style="font-size:13px;">Layer this on top — makes it specific to their world</span>
       </div>
       <div id="vp-addon" class="vertical-pain-note">
-        <strong id="vp-addon-label">SELECT A VERTICAL ABOVE</strong>
-        <span id="vp-addon-text">Pick a vertical in the top bar to see the matching vertical pain add-on line.</span>
+        <strong id="vp-addon-label">SELECT A VERTICAL IN THE TOP BAR</strong>
+        <span id="vp-addon-text">Pick a vertical above to see the industry-specific pain add-on line.</span>
       </div>
     </div>
 
     <!-- TRANSITION -->
     <div class="section-block" id="sec-transition">
       <div class="panel-header">
-        <span class="panel-stepnum">STEP 4</span>
+        <span class="panel-stepnum">STEP 3</span>
         <span class="panel-title">Transition Question</span>
         <span class="panel-hint">Ask the highlighted question — then stop talking. Silence is your weapon.</span>
       </div>
@@ -1126,7 +1078,7 @@
     <!-- OBJECTIONS -->
     <div class="section-block" id="sec-objections">
       <div class="panel-header">
-        <span class="panel-stepnum">STEP 4.5</span>
+        <span class="panel-stepnum">STEP 4</span>
         <span class="panel-title">Objection Handling</span>
         <span class="panel-hint">Acknowledge → Reframe → Ask a question. Never argue.</span>
       </div>
@@ -2988,12 +2940,12 @@
   };
 
   const painCardMap = {
-    jobprofit: ['vp-jobprofit','pp-jobprofit'],
-    multiloc: ['vp-multiloc','pp-multiloc'],
-    closeexcel: ['vp-closeexcel','pp-closeexcel'],
-    visibility: ['vp-visibility','pp-visibility'],
-    multientity: ['vp-multientity','pp-multientity'],
-    scaling: ['vp-scaling','pp-scaling']
+    jobprofit: ['pp-jobprofit'],
+    multiloc: ['pp-multiloc'],
+    closeexcel: ['pp-closeexcel'],
+    visibility: ['pp-visibility'],
+    multientity: ['pp-multientity'],
+    scaling: ['pp-scaling']
   };
 
   function onSetupChange() {
@@ -3001,8 +2953,27 @@
     const sys = document.getElementById('selSystem').value;
     const pain = document.getElementById('selPain').value;
 
+    // ── NAV INDICATOR DOTS ──
+    // Pain Prop dot: lights up when vertical OR pain is set (both affect that section)
+    const indPain = document.getElementById('ind-painprop');
+    indPain.className = 'nav-indicator';
+    if (vert && pain) {
+      indPain.classList.add('active-all');    // both set → bright pulsing green
+    } else if (pain) {
+      indPain.classList.add('active-pain');   // pain only → red dot
+    } else if (vert) {
+      indPain.classList.add('active-vert');   // vertical only → green dot
+    }
+
+    // Transition Q dot: lights up when system is set
+    const indTrans = document.getElementById('ind-transition');
+    indTrans.className = 'nav-indicator';
+    if (sys) {
+      indTrans.classList.add('active-sys');   // system set → blue dot
+    }
+
     // highlight pain cards
-    document.querySelectorAll('[id^="vp-"]:not(#vp-addon), [id^="pp-"]').forEach(c => c.classList.remove('highlighted'));
+    document.querySelectorAll('[id^="pp-"]').forEach(c => c.classList.remove('highlighted'));
     if (pain && painCardMap[pain]) {
       painCardMap[pain].forEach(id => {
         const el = document.getElementById(id);
@@ -3041,48 +3012,6 @@
     card.querySelector('.disc-kpi-header').classList.toggle('open');
   }
 
-  // ── TIMER ──
-  let timerRunning = false;
-  let timerSeconds = 0;
-  let timerInterval = null;
-
-  function toggleTimer() {
-    if (timerRunning) {
-      clearInterval(timerInterval);
-      timerRunning = false;
-      document.getElementById('btnTimer').textContent = 'START';
-      document.getElementById('btnTimer').classList.remove('active');
-    } else {
-      timerInterval = setInterval(() => {
-        timerSeconds++;
-        updateTimerDisplay();
-      }, 1000);
-      timerRunning = true;
-      document.getElementById('btnTimer').textContent = 'PAUSE';
-      document.getElementById('btnTimer').classList.add('active');
-    }
-  }
-
-  function resetTimer() {
-    clearInterval(timerInterval);
-    timerRunning = false;
-    timerSeconds = 0;
-    document.getElementById('btnTimer').textContent = 'START';
-    document.getElementById('btnTimer').classList.remove('active');
-    updateTimerDisplay();
-  }
-
-  function updateTimerDisplay() {
-    const el = document.getElementById('timerDisplay');
-    el.textContent = formatTime(timerSeconds);
-    el.className = 'timer-value' + (timerSeconds > 300 ? ' warning' : '');
-  }
-
-  function formatTime(s) {
-    const m = Math.floor(s / 60);
-    const sec = s % 60;
-    return m + ':' + String(sec).padStart(2, '0');
-  }
 
 </script>
 </body>
