@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Objection Library — BDR Training</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f0f0f0; --surface:#ffffff; --surface2:#eaf4f1; --surface3:#d8ede8;
+    --border:#b8d9d0; --border-bright:#3DA688;
+    --accent:#2A6B5A; --accent2:#3DA688; --accent3:#5CC98A;
+    --accent-dim:#2A6B5A18; --accent2-dim:#3DA68820;
+    --warn:#c97a00; --warn-dim:#c97a0018; --danger:#cc3333; --danger-dim:#cc333315;
+    --text:#1a2e28; --text-mid:#2A6B5A; --text-dim:#6b9e90;
+    --mono:'IBM Plex Mono',monospace; --sans:'DM Sans',sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;line-height:1.55;}
+  .topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:20;flex-wrap:wrap;}
+  .logo{font-family:var(--mono);font-weight:600;font-size:13px;letter-spacing:.06em;color:var(--accent);}
+  .logo span{color:var(--text-dim);font-weight:400;}
+  .tabs{display:flex;gap:6px;margin-left:auto;}
+  .tab{font-size:12px;font-weight:600;color:var(--text-mid);text-decoration:none;padding:7px 13px;border-radius:6px;border:1px solid transparent;}
+  .tab:hover{background:var(--surface2);}
+  .tab.active{background:var(--accent2-dim);border-color:var(--border);color:var(--accent);}
+  .page{max-width:880px;margin:0 auto;padding:34px 20px 70px;}
+  .eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent2);margin-bottom:8px;}
+  h1{font-size:32px;font-weight:700;letter-spacing:-.02em;line-height:1.1;}
+  .subtitle{margin-top:8px;color:var(--text-mid);font-size:14px;max-width:640px;}
+
+  .framework{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 20px;margin:24px 0 8px;}
+  .framework h3{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:12px;}
+  .fw-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+  .fw{border-top:3px solid var(--accent2);background:var(--surface2);border-radius:0 0 8px 8px;padding:12px 14px;}
+  .fw b{display:block;font-size:13px;margin-bottom:4px;color:var(--accent);}
+  .fw p{font-size:12px;color:var(--text-mid);}
+  .fw i{display:block;margin-top:8px;font-size:11.5px;color:var(--text);font-style:italic;}
+
+  .studybar{position:sticky;top:52px;z-index:15;background:var(--bg);padding:14px 0 10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;border-bottom:1px solid var(--border);margin-bottom:8px;}
+  .toc-chip{font-size:11.5px;font-weight:600;color:var(--text-mid);text-decoration:none;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:6px 12px;}
+  .toc-chip:hover{border-color:var(--accent2);color:var(--accent);}
+  .toc-chip b{font-family:var(--mono);font-size:10px;color:var(--text-dim);font-weight:600;}
+  .practice-btn{margin-left:auto;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;cursor:pointer;border-radius:16px;padding:7px 14px;border:1px solid var(--warn);color:var(--warn);background:var(--warn-dim);}
+  .practice-btn.on{background:var(--warn);color:#fff;}
+
+  .cat{margin-top:34px;scroll-margin-top:130px;}
+  .cat-head{display:flex;gap:14px;align-items:flex-start;}
+  .cat-emoji{font-size:26px;line-height:1.2;}
+  .cat h2{font-size:20px;font-weight:700;}
+  .cat-count{font-family:var(--mono);font-size:11px;color:var(--text-dim);font-weight:400;vertical-align:middle;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:2px 9px;margin-left:6px;}
+  .cat-teach{margin-top:4px;font-size:13px;color:var(--text-mid);max-width:660px;}
+  .cat-motto{margin:12px 0 12px;display:inline-block;font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;color:var(--accent);background:var(--accent-dim);border-radius:5px;padding:5px 12px;}
+  .obj-list{display:flex;flex-direction:column;gap:8px;}
+  .obj{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+  .obj-line{display:flex;align-items:center;gap:10px;padding:12px 15px;cursor:pointer;}
+  .obj-line:hover{background:var(--surface2);}
+  .obj-quote{font-size:13.5px;font-weight:600;color:var(--danger);flex:1;}
+  .chev{font-size:9px;color:var(--text-dim);transition:transform .15s;}
+  .obj.open .chev{transform:rotate(90deg);}
+  .obj-resp{display:none;padding:2px 16px 14px;font-size:13.5px;line-height:1.7;color:var(--text);border-top:1px dashed var(--border);padding-top:11px;margin:0 0;}
+  .obj.open .obj-resp{display:block;}
+  .obj-resp em{color:var(--accent2);font-style:normal;font-weight:600;}
+
+  body.practice .obj .obj-resp{display:none;}
+  body.practice .obj.open .obj-resp{display:block;}
+  body.practice .obj-line::after{content:"SAY IT OUT LOUD — THEN TAP";font-family:var(--mono);font-size:8.5px;letter-spacing:.08em;color:var(--warn);}
+  body.practice .obj.open .obj-line::after{content:"";}
+
+  footer{margin-top:44px;padding-top:14px;border-top:1px solid var(--border);font-family:var(--mono);font-size:10px;color:var(--text-dim);display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;}
+  @media(max-width:680px){.fw-grid{grid-template-columns:1fr;}h1{font-size:26px;}.studybar{top:96px;}}
+  @media print{.topbar,.studybar{display:none;}.obj-resp{display:block!important;}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="logo">SAGE INTACCT <span>· BDR TRAINING</span></span>
+  <div class="tabs">
+    <a class="tab" href="./console.html">📞 Call Console</a>
+    <a class="tab" href="./training.html">📚 Training Hub</a>
+    <a class="tab active" href="./objections.html">⚡ Objection Library</a>
+  </div>
+</div>
+
+<div class="page">
+  <div class="eyebrow">BDR Training · Study Resource</div>
+  <h1>The Objection Library</h1>
+  <p class="subtitle">All 30 objections you'll hear, sorted into the five families they actually belong to. Learn the family and you can handle wordings you've never heard — the response pattern is the same.</p>
+
+  <div class="framework">
+    <h3>The Universal Pattern — Every Response Below Follows It</h3>
+    <div class="fw-grid">
+      <div class="fw"><b>1 · Acknowledge</b><p>Agree first. Resistance melts when there's nothing to push against.</p><i>"Totally understand…" / "That's fair…"</i></div>
+      <div class="fw"><b>2 · Reframe</b><p>Shift from their objection to the pain underneath it — usually with context about companies like theirs.</p><i>"…most teams we work with said the same thing until…"</i></div>
+      <div class="fw"><b>3 · Ask</b><p>End with one small question. A question keeps the call alive; a statement ends it.</p><i>"…can I ask, how much of that is still manual?"</i></div>
+    </div>
+  </div>
+
+  <div class="studybar">
+<a class="toc-chip" href="#cat-brushoff">🚪 Brush-Offs <b>6</b></a>
+    <a class="toc-chip" href="#cat-statusquo">🪑 Status Quo <b>13</b></a>
+    <a class="toc-chip" href="#cat-budget">💸 Budget <b>3</b></a>
+    <a class="toc-chip" href="#cat-timing">⏳ Timing <b>5</b></a>
+    <a class="toc-chip" href="#cat-person">🧭 Wrong Person <b>3</b></a>
+    <button class="practice-btn" id="practiceBtn" onclick="togglePractice()">🎯 Practice Mode</button>
+  </div>
+
+  <section class="cat" id="cat-brushoff">
+    <div class="cat-head">
+      <span class="cat-emoji">🚪</span>
+      <div>
+        <h2>Brush-Offs <span class="cat-count">6</span></h2>
+        <p class="cat-teach">The reflex, not the real answer. They're rejecting the interruption, not Sage Intacct — they haven't heard enough to reject anything. Your only goal is to earn 30 more seconds, usually by agreeing with them first.</p>
+      </div>
+    </div>
+    <div class="cat-motto">📌 Agree fast, ask small.</div>
+    <div class="obj-list">
+      <div class="obj">
+        <div class="obj-line" onclick="this.parentElement.classList.toggle('open')">
+          <span class="obj-quote">"Send me something"</span>
+          <span class="chev">▶</span>
+        </div>
+        <div class="obj-resp"><p>"Happy to — I want to make sure I send something relevant. Quick question: what's the biggest pain in your current reporting or job tracking process?"</p></div>
+      </div>
+      <div class="obj">
+        <div class="obj-line" onclick="this.parentElement.classList.toggle('open')">
+          <span class="obj-quote">"Not interested"</span>
+          <span class="chev">▶</span>
+        </div>
+        <div class="obj-resp"><p><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CLARIFY</strong><br>"Totally fair — is that because it's bad timing, or you're already set with how you handle finance today?"</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">RESPOND</strong><br>"Got it. I'm not calling to pitch — I'm trying to see if this is even relevant."</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CTA</strong><br>"If I ask one quick question: how long does month-end close take right now?"</p></div>
+      </div>
+      <div class="obj">
+        <div class="obj-line" onclick="this.parentElement.classList.toggle('open')">
+          <span class="obj-quote">"Just send me info"</span>
+          <span class="chev">▶</span>
+        </div>
+        <div class="obj-resp"><p><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CLARIFY</strong><br>"Happy to — quick question so I send something useful: are you focused more on reporting, close speed, or multi-location complexity?"</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">RESPOND</strong><br>"Perfect. I'll send the short version — no fluff. I'll include one example from a similar team."</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CTA</strong><br>"If it's relevant, worth 15 minutes to compare notes next week?"</p></div>
+      </div>
+      <div class="obj">
+        <div class="obj-line" onclick="this.parentElement.classList.toggle('open')">
+          <span class="obj-quote">"We're in the middle of something"</span>
+          <span class="chev">▶</span>
+        </div>
+        <div class="obj-resp"><p><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CLARIFY</strong><br>"Implementation, audit, acquisition, or growth project?"</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">RESPOND</strong><br>"Totally fair — I don't want to add noise. Teams often plan the next step while they're mid-project."</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CTA</strong><br>"Should I reconnect right after it wraps, or 2–3 weeks before?"</p></div>
+      </div>
+      <div class="obj">
+        <div class="obj-line" onclick="this.parentElement.classList.toggle('open')">
+          <span class="obj-quote">"I don't take cold calls"</span>
+          <span class="chev">▶</span>
+        </div>
+        <div class="obj-resp"><p><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CLARIFY</strong><br>"Fair — do you prefer email, or should I reach out to someone else?"</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">RESPOND</strong><br>"I'll be brief — the reason I called is we see teams hit reporting/close limits as they grow. I'm only trying to confirm whether that's happening there."</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CTA</strong><br>"If I send 3 bullets, would you take a look?"</p></div>
+      </div>
+      <div class="obj">
+        <div class="obj-line" onclick="this.parentElement.classList.toggle('open')">
+          <span class="obj-quote">"Just email me"</span>
+          <span class="chev">▶</span>
+        </div>
+        <div class="obj-resp"><p><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CLARIFY</strong><br>"Perfect — should I anchor it to reporting, close speed, or multi-location visibility?"</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">RESPOND</strong><br>"Got it — I'll send the short version. One relevant example, not a deck."</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CTA</strong><br>"If it looks relevant, is 15 minutes next week crazy?"</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cat" id="cat-statusquo">
+    <div class="cat-head">
+      <span class="cat-emoji">🪑</span>
+      <div>
+        <h2>Status Quo <span class="cat-count">13</span></h2>
+        <p class="cat-teach">The most common family by far. Comfort with the current system feels like satisfaction, but 'happy' usually means 'used to it.' Never attack their choice — introduce doubt with a question about the workarounds living around their system.</p>
+      </div>
+    </div>
+    <div class="cat-motto">📌 Never fight the system. Ask about the workarounds.</div>
+    <div class="obj-list">
+      <div class="obj">
+        <div class="obj-line" onclick="this.parentElement.classList.toggle('open')">
+          <span class="obj-quote">"We're happy with what we have"</span>
+          <span class="chev">▶</span>
+        </div>
+        <div class="obj-resp"><p>"Totally understand — most companies we end up working with said the same thing. Can I ask, when it comes to <em>[job profitability / multi-location reporting / closing the books]</em>, how much of that is still manual today?"</p></div>
+      </div>
+      <div class="obj">
+        <div class="obj-line" onclick="this.parentElement.classList.toggle('open')">
+          <span class="obj-quote">"We just implemented something"</span>
+          <span class="chev">▶</span>
+        </div>
+        <div class="obj-resp"><p>"Got it — how long ago? The reason I ask is that a lot of companies hit limitations pretty quickly once complexity or location count picks up."</p></div>
+      </div>
+      <div class="obj">
+        <div class="obj-line" onclick="this.parentElement.classList.toggle('open')">
+          <span class="obj-quote">"We went with a competitor"</span>
+          <span class="chev">▶</span>
+        </div>
+        <div class="obj-resp"><p>"Congrats — who'd you go with? [Pause] How's it going so far? [Listen — circle back in 6–12 months]"</p></div>
+      </div>
+      <div class="obj">
+        <div class="obj-line" onclick="this.parentElement.classList.toggle('open')">
+          <span class="obj-quote">"QuickBooks works fine"</span>
+          <span class="chev">▶</span>
+        </div>
+        <div class="obj-resp"><p><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CLARIFY</strong><br>"How many locations/entities are you managing today?"</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">RESPOND</strong><br>"QuickBooks is solid early — it usually strains once reporting and close get more complex. Teams move when consolidated reporting becomes spreadsheet-heavy."</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CTA</strong><br>"Quick benchmark: how manual is reporting today?"</p></div>
+      </div>
+      <div class="obj">
+        <div class="obj-line" onclick="this.parentElement.classList.toggle('open')">
+          <span class="obj-quote">"We use NetSuite"</span>
+          <span class="chev">▶</span>
+        </div>
+        <div class="obj-resp"><p><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CLARIFY</strong><br>"Are you happy with reporting and agility today?"</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">RESPOND</strong><br>"Totally makes sense — teams only look elsewhere if something becomes painful. Usually it's admin overhead or reporting friction."</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CTA</strong><br>"If you could improve one thing, what would it be — reporting, close, or admin overhead?"</p></div>
+      </div>
+      <div class="obj">
+        <div class="obj-line" onclick="this.parentElement.classList.toggle('open')">
+          <span class="obj-quote">"We already have a system"</span>
+          <span class="chev">▶</span>
+        </div>
+        <div class="obj-resp"><p><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CLARIFY</strong><br>"What are you using today?"</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">RESPOND</strong><br>"Nice — then it's not 'replacement,' it's whether it still fits where you're headed. Growth usually exposes reporting and control gaps."</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CTA</strong><br>"How long does close take — and is it getting better or worse?"</p></div>
+      </div>
+      <div class="obj">
+        <div class="obj-line" onclick="this.parentElement.classList.toggle('open')">
+          <span class="obj-quote">"We're good with what we have"</span>
+          <span class="chev">▶</span>
+        </div>
+        <div class="obj-resp"><p><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CLARIFY</strong><br>"What part works best — close, reporting, or controls?"</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">RESPOND</strong><br>"Love hearing that — I'm only reaching out because teams usually feel that way right before growth adds friction."</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CTA</strong><br>"If you grow 25% this year, what breaks first?"</p></div>
+      </div>
+      <div class="obj">
+        <div class="obj-line" onclick="this.parentElement.classList.toggle('open')">
+          <span class="obj-quote">"We don't want to switch systems"</span>
+          <span class="chev">▶</span>
+        </div>
+        <div class="obj-resp"><p><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CLARIFY</strong><br>"Is the concern more risk, effort, or disruption?"</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">RESPOND</strong><br>"Totally valid — I wouldn't switch unless it was clearly worth it. There are staged approaches that reduce disruption."</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CTA</strong><br>"If nothing changes, what breaks first in the next 12 months?"</p></div>
+      </div>
+      <div class="obj">
+        <div class="obj-line" onclick="this.parentElement.classList.toggle('open')">
+          <span class="obj-quote">"We're locked into a contract"</span>
+          <span class="chev">▶</span>
+        </div>
+        <div class="obj-resp"><p><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CLARIFY</strong><br>"When does renewal come up?"</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">RESPOND</strong><br>"Got it — then this is a planning conversation, not a switch today. Teams often benchmark options 60–90 days before renewal."</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CTA</strong><br>"Want to baseline now so you're not rushed later?"</p></div>
+      </div>
+      <div class="obj">
+        <div class="obj-line" onclick="this.parentElement.classList.toggle('open')">
+          <span class="obj-quote">"We're a small team"</span>
+          <span class="chev">▶</span>
+        </div>
+        <div class="obj-resp"><p><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CLARIFY</strong><br>"How many people touch close and reporting today?"</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">RESPOND</strong><br>"Exactly — small teams need systems that remove manual effort. Wins are time back and fewer errors."</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CTA</strong><br>"If you could eliminate one manual process, what would it be?"</p></div>
+      </div>
+      <div class="obj">
+        <div class="obj-line" onclick="this.parentElement.classList.toggle('open')">
+          <span class="obj-quote">"We don't have that problem"</span>
+          <span class="chev">▶</span>
+        </div>
+        <div class="obj-resp"><p><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CLARIFY</strong><br>"Just to sanity check — how long does close take today?"</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">RESPOND</strong><br>"Nice — then you're ahead of most teams. Pain usually shows up with growth or new entities."</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CTA</strong><br>"If you grow 25% this year, what breaks first?"</p></div>
+      </div>
+      <div class="obj">
+        <div class="obj-line" onclick="this.parentElement.classList.toggle('open')">
+          <span class="obj-quote">"We evaluated this before"</span>
+          <span class="chev">▶</span>
+        </div>
+        <div class="obj-resp"><p><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CLARIFY</strong><br>"What ruled it out last time — timing, cost, fit, or complexity?"</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">RESPOND</strong><br>"Helpful — things may have changed since then. Pain grows as reporting and close complexity increases."</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CTA</strong><br>"Worth a quick revisit if your needs changed?"</p></div>
+      </div>
+      <div class="obj">
+        <div class="obj-line" onclick="this.parentElement.classList.toggle('open')">
+          <span class="obj-quote">"We outsource finance"</span>
+          <span class="chev">▶</span>
+        </div>
+        <div class="obj-resp"><p><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CLARIFY</strong><br>"Do they handle reporting too — or mainly bookkeeping/tax?"</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">RESPOND</strong><br>"Got it — the pain usually shows up when leadership needs faster insight. Most teams still need location/entity visibility internally."</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CTA</strong><br>"How quickly can you get location-level performance today?"</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cat" id="cat-budget">
+    <div class="cat-head">
+      <span class="cat-emoji">💸</span>
+      <div>
+        <h2>Budget <span class="cat-count">3</span></h2>
+        <p class="cat-teach">Almost always premature — you never mentioned a price, so this is really 'this isn't a priority.' Separate priority from price: the first meeting costs nothing, and knowing what modern looks like is free.</p>
+      </div>
+    </div>
+    <div class="cat-motto">📌 You never quoted a price. Don't defend one.</div>
+    <div class="obj-list">
+      <div class="obj">
+        <div class="obj-line" onclick="this.parentElement.classList.toggle('open')">
+          <span class="obj-quote">"We don't have budget right now"</span>
+          <span class="chev">▶</span>
+        </div>
+        <div class="obj-resp"><p>"That makes sense. Most of our conversations aren't about budget right now — they're about understanding whether what you're running is going to scale with you. Is 20 minutes worth figuring that out?"</p></div>
+      </div>
+      <div class="obj">
+        <div class="obj-line" onclick="this.parentElement.classList.toggle('open')">
+          <span class="obj-quote">"No budget"</span>
+          <span class="chev">▶</span>
+        </div>
+        <div class="obj-resp"><p><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CLARIFY</strong><br>"Is it no budget at all, or just not allocated right now?"</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">RESPOND</strong><br>"Totally fair. Most teams justify it through time saved at close and less manual reporting."</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CTA</strong><br>"Worth a quick call to see if it would pay for itself?"</p></div>
+      </div>
+      <div class="obj">
+        <div class="obj-line" onclick="this.parentElement.classList.toggle('open')">
+          <span class="obj-quote">"Too expensive"</span>
+          <span class="chev">▶</span>
+        </div>
+        <div class="obj-resp"><p><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CLARIFY</strong><br>"Compared to what — cost today, effort, or risk?"</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">RESPOND</strong><br>"Totally fair — the goal is usually to reduce manual reporting and speed close. Most teams justify this by getting time back and fewer errors."</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CTA</strong><br>"If we could reduce close time by 30–50%, worth benchmarking?"</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cat" id="cat-timing">
+    <div class="cat-head">
+      <span class="cat-emoji">⏳</span>
+      <div>
+        <h2>Timing <span class="cat-count">5</span></h2>
+        <p class="cat-teach">The most honest-sounding objection and the one that quietly kills the most pipeline. 'Later' is where deals go to die — convert vague later into a cheap, dated commitment on the calendar.</p>
+      </div>
+    </div>
+    <div class="cat-motto">📌 Vague later → dated later. Always.</div>
+    <div class="obj-list">
+      <div class="obj">
+        <div class="obj-line" onclick="this.parentElement.classList.toggle('open')">
+          <span class="obj-quote">"We're too busy right now"</span>
+          <span class="chev">▶</span>
+        </div>
+        <div class="obj-resp"><p>"I get it — this is a 20-minute call, not a project. What's making it so hectic? [Pause] That's usually exactly what we help with."</p></div>
+      </div>
+      <div class="obj">
+        <div class="obj-line" onclick="this.parentElement.classList.toggle('open')">
+          <span class="obj-quote">"Call me back next quarter"</span>
+          <span class="chev">▶</span>
+        </div>
+        <div class="obj-resp"><p>"Happy to — I'll put it in the calendar. One question before I let you go: what would need to change by then for it to be worth a look?"</p></div>
+      </div>
+      <div class="obj">
+        <div class="obj-line" onclick="this.parentElement.classList.toggle('open')">
+          <span class="obj-quote">"We're too busy"</span>
+          <span class="chev">▶</span>
+        </div>
+        <div class="obj-resp"><p><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CLARIFY</strong><br>"Busy because of close, audit, or growth/fire drills?"</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">RESPOND</strong><br>"Totally get it — usually that's when systems start showing cracks."</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CTA</strong><br>"If I keep it to 12 minutes, worth seeing if there's a faster path?"</p></div>
+      </div>
+      <div class="obj">
+        <div class="obj-line" onclick="this.parentElement.classList.toggle('open')">
+          <span class="obj-quote">"Not looking right now"</span>
+          <span class="chev">▶</span>
+        </div>
+        <div class="obj-resp"><p><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CLARIFY</strong><br>"Is it because things are stable, or priorities are elsewhere?"</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">RESPOND</strong><br>"Got it — I'm not trying to force timing. Teams start planning when close/reporting starts slowing decisions."</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CTA</strong><br>"What would need to change for it to be worth looking?"</p></div>
+      </div>
+      <div class="obj">
+        <div class="obj-line" onclick="this.parentElement.classList.toggle('open')">
+          <span class="obj-quote">"Talk to me when it's urgent"</span>
+          <span class="chev">▶</span>
+        </div>
+        <div class="obj-resp"><p><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CLARIFY</strong><br>"What makes it urgent — audit issues, close delays, or reporting pressure?"</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">RESPOND</strong><br>"Totally fair — urgency is when it hurts. Best planning happens slightly before the breaking point."</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CTA</strong><br>"What would need to happen for this to move up the list?"</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cat" id="cat-person">
+    <div class="cat-head">
+      <span class="cat-emoji">🧭</span>
+      <div>
+        <h2>Wrong Person <span class="cat-count">3</span></h2>
+        <p class="cat-teach">Not a rejection — it's a map. They just offered to tell you who the right person is. Thank them, extract the referral, and grab one piece of intel about the finance office before you go.</p>
+      </div>
+    </div>
+    <div class="cat-motto">📌 It's a referral wearing a disguise.</div>
+    <div class="obj-list">
+      <div class="obj">
+        <div class="obj-line" onclick="this.parentElement.classList.toggle('open')">
+          <span class="obj-quote">"I'm not the right person"</span>
+          <span class="chev">▶</span>
+        </div>
+        <div class="obj-resp"><p>"No worries — who would be? And while I have you — what system is the finance team using today?"</p></div>
+      </div>
+      <div class="obj">
+        <div class="obj-line" onclick="this.parentElement.classList.toggle('open')">
+          <span class="obj-quote">"Finance handles this"</span>
+          <span class="chev">▶</span>
+        </div>
+        <div class="obj-resp"><p><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CLARIFY</strong><br>"Totally — who in finance owns reporting and close improvements?"</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">RESPOND</strong><br>"Perfect, I'll connect with them. This affects close speed, controls, and visibility."</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CTA</strong><br>"Can you point me to the right person — Controller or CFO?"</p></div>
+      </div>
+      <div class="obj">
+        <div class="obj-line" onclick="this.parentElement.classList.toggle('open')">
+          <span class="obj-quote">"Not my department"</span>
+          <span class="chev">▶</span>
+        </div>
+        <div class="obj-resp"><p><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CLARIFY</strong><br>"Who usually owns this — finance leadership or ops finance?"</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">RESPOND</strong><br>"Totally fair — I'll contact the right team. This decision is usually driven by reporting and close pain."</p>
+          <p style="margin-top:8px;"><strong style="color:var(--text-dim);font-size:10px;font-family:var(--mono);">CTA</strong><br>"Who's best — Controller or CFO?"</p></div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span>SAGE INTACCT · BDR OBJECTION LIBRARY</span>
+    <span>ACKNOWLEDGE → REFRAME → ASK · NEVER ARGUE</span>
+  </footer>
+</div>
+
+<script>
+  function togglePractice(){
+    const on = document.body.classList.toggle('practice');
+    document.getElementById('practiceBtn').classList.toggle('on', on);
+    if (on) document.querySelectorAll('.obj.open').forEach(o=>o.classList.remove('open'));
+  }
+</script>
+</body>
+</html>

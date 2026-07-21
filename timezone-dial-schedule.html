@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Follow-the-Sun Dial Schedule</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Archivo:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0B1F33;
+    --ink-soft:#3E5A75;
+    --bg:#FFFFFF;
+    --paper:#F5F9FC;
+    --line:#D8E4EE;
+    --h1:#C9EDFA;   /* lightest — low priority */
+    --h2:#7CC4EF;
+    --h3:#2E86C9;
+    --h4:#0E4D80;
+    --h5:#062B4A;   /* darkest — power block */
+    --mono:'IBM Plex Mono',monospace;
+    --disp:'Barlow Condensed',sans-serif;
+    --body:'Archivo',sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:var(--body);background:var(--bg);color:var(--ink);font-size:14px;line-height:1.5;}
+  .page{max-width:960px;margin:0 auto;padding:36px 32px 48px;}
+
+  /* header */
+  header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid var(--ink);padding-bottom:14px;margin-bottom:6px;flex-wrap:wrap;gap:8px;}
+  .kicker{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:4px;}
+  h1{font-family:var(--disp);font-weight:700;font-size:40px;line-height:1;text-transform:uppercase;letter-spacing:.01em;}
+  .shift-tag{font-family:var(--mono);font-size:12px;font-weight:600;background:var(--ink);color:#fff;padding:6px 12px;border-radius:3px;white-space:nowrap;}
+
+  .legend{display:flex;align-items:center;gap:14px;padding:10px 0 22px;font-family:var(--mono);font-size:10.5px;color:var(--ink-soft);flex-wrap:wrap;}
+  .legend .cells{display:flex;gap:2px;}
+  .legend .cells span{width:16px;height:12px;border-radius:2px;display:block;}
+
+  /* timeline */
+  .tl-wrap{margin-bottom:30px;}
+  .tl{display:flex;height:58px;border-radius:5px;overflow:hidden;border:1px solid var(--line);}
+  .tl > div{position:relative;display:flex;flex-direction:column;justify-content:center;align-items:center;color:#fff;font-family:var(--disp);font-weight:600;letter-spacing:.03em;border-right:2px solid #fff;}
+  .tl > div:last-child{border-right:none;}
+  .tl .z{font-size:17px;text-transform:uppercase;line-height:1.1;}
+  .tl .t{font-family:var(--mono);font-size:9.5px;font-weight:500;opacity:.85;letter-spacing:0;}
+  .tl .dark-txt{color:var(--ink);}
+  .tl-axis{display:flex;font-family:var(--mono);font-size:10px;color:var(--ink-soft);margin-top:5px;}
+  .tl-axis span{border-left:1px solid var(--line);padding-left:4px;}
+
+  /* blocks */
+  .blocks{display:flex;flex-direction:column;gap:10px;}
+  .block{display:grid;grid-template-columns:118px 6px 1fr;gap:0 16px;background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:14px 18px 14px 14px;align-items:start;}
+  .block .when{font-family:var(--mono);}
+  .block .when .est{font-size:15px;font-weight:600;line-height:1.25;}
+  .block .when .local{font-size:10.5px;color:var(--ink-soft);margin-top:3px;line-height:1.4;}
+  .block .bar{width:6px;border-radius:3px;align-self:stretch;}
+  .block h2{font-family:var(--disp);font-size:20px;font-weight:600;text-transform:uppercase;letter-spacing:.02em;line-height:1.1;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;}
+  .block h2 .pill{font-family:var(--mono);font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;padding:3px 8px;border-radius:3px;color:#fff;position:relative;top:-2px;}
+  .block p{color:var(--ink-soft);margin-top:4px;font-size:13px;max-width:64ch;}
+  .block .geo{font-family:var(--mono);font-size:10.5px;color:var(--ink);margin-top:6px;letter-spacing:.01em;}
+
+  .i1{background:var(--h1);} .i2{background:var(--h2);} .i3{background:var(--h3);} .i4{background:var(--h4);} .i5{background:var(--h5);}
+
+  /* footer grid */
+  .foot{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:28px;}
+  .card{border:1px solid var(--line);border-radius:6px;padding:14px 16px;}
+  .card h3{font-family:var(--disp);font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;padding-bottom:6px;border-bottom:2px solid var(--ink);}
+  .card ul{list-style:none;}
+  .card li{font-size:12.5px;color:var(--ink-soft);padding:4px 0 4px 14px;position:relative;}
+  .card li::before{content:"";position:absolute;left:0;top:10px;width:6px;height:6px;border-radius:1px;background:var(--h3);}
+  .card li strong{color:var(--ink);font-weight:600;}
+  .card.dark{background:var(--h5);border-color:var(--h5);color:#fff;}
+  .card.dark h3{border-bottom-color:#fff;color:#fff;}
+  .card.dark li{color:#C9DCEC;}
+  .card.dark li strong{color:#fff;}
+  .card.dark li::before{background:var(--h2);}
+
+  footer.note{margin-top:22px;font-family:var(--mono);font-size:10px;color:var(--ink-soft);border-top:1px solid var(--line);padding-top:10px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;}
+
+  @media(max-width:640px){
+    h1{font-size:30px;}
+    .tl .z{font-size:12px;} .tl .t{display:none;}
+    .block{grid-template-columns:1fr;gap:8px;}
+    .block .bar{width:100%;height:6px;align-self:auto;}
+    .foot{grid-template-columns:1fr;}
+  }
+  @media print{
+    .page{padding:0;}
+    body{font-size:12px;}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div>
+      <div class="kicker">BDR Floor Schedule &middot; Sage Intacct</div>
+      <h1>Follow-the-Sun Dial Blocks</h1>
+    </div>
+    <div class="shift-tag">SHIFT 8:30A – 5:00P EST</div>
+  </header>
+
+  <div class="legend">
+    <span>DIAL PRIORITY</span>
+    <div class="cells">
+      <span class="i1"></span><span class="i2"></span><span class="i3"></span><span class="i4"></span><span class="i5"></span>
+    </div>
+    <span>LOW &rarr; POWER BLOCK &nbsp;&middot;&nbsp; darker = protect this time, no admin</span>
+  </div>
+
+  <!-- signature: shift timeline -->
+  <div class="tl-wrap">
+    <div class="tl">
+      <div class="i4" style="flex:1.0"><span class="z">EST</span><span class="t">8:30–9:00</span></div>
+      <div class="i5" style="flex:1.5"><span class="z">CST</span><span class="t">9:00–10:30</span></div>
+      <div class="i3" style="flex:1.0"><span class="z">MST</span><span class="t">10:00–11:30</span></div>
+      <div class="i4" style="flex:1.5"><span class="z">PST</span><span class="t">11:00–12:30</span></div>
+      <div class="i1 dark-txt" style="flex:1.0"><span class="z">Lunch</span><span class="t">12:30–1:30</span></div>
+      <div class="i2 dark-txt" style="flex:2.5"><span class="z">Mixed Volume</span><span class="t">1:30–4:00</span></div>
+      <div class="i5" style="flex:1.0"><span class="z">EST</span><span class="t">4:00–5:00</span></div>
+    </div>
+    <div class="tl-axis">
+      <span style="flex:1.0">8:30</span><span style="flex:1.5">9:00</span><span style="flex:1.0">10:00</span><span style="flex:1.5">11:00</span><span style="flex:1.0">12:30</span><span style="flex:2.5">1:30</span><span style="flex:1.0">4:00</span>
+    </div>
+  </div>
+
+  <div class="blocks">
+
+    <div class="block">
+      <div class="when"><div class="est">8:30 – 9:00</div><div class="local">their 8:30–9:00a</div></div>
+      <div class="bar i4"></div>
+      <div>
+        <h2>Eastern Openers <span class="pill i4">HIGH RATE</span></h2>
+        <p>Catch EST decision-makers at their desk before the meeting block. Shift start cuts the window short — dial from the minute you sit down.</p>
+        <div class="geo">NY &middot; NJ &middot; ATL &middot; FL &middot; BOS &middot; DC &middot; CLT</div>
+      </div>
+    </div>
+
+    <div class="block">
+      <div class="when"><div class="est">9:00 – 10:30</div><div class="local">their 8:00–9:30a</div></div>
+      <div class="bar i5"></div>
+      <div>
+        <h2>Central Power Block <span class="pill i5">POWER</span></h2>
+        <p>The cleanest block of the day — full morning answer window for CST. Heaviest mid-market density. Carry the biggest dial load here.</p>
+        <div class="geo">TX &middot; CHI &middot; MSP &middot; NASH &middot; STL &middot; KC &middot; NOLA</div>
+      </div>
+    </div>
+
+    <div class="block">
+      <div class="when"><div class="est">10:00 – 11:30</div><div class="local">their 8:00–9:30a</div></div>
+      <div class="bar i3"></div>
+      <div>
+        <h2>Mountain Sweep <span class="pill i3">SHORT BLOCK</span></h2>
+        <p>Thinnest zone by account count — run it as a short sub-block. Mar–Nov: Phoenix skips DST, so treat AZ as Pacific and roll it into the next block.</p>
+        <div class="geo">DEN &middot; SLC &middot; ABQ &middot; BOI &nbsp;(AZ &rarr; PST in summer)</div>
+      </div>
+    </div>
+
+    <div class="block">
+      <div class="when"><div class="est">11:00 – 12:30</div><div class="local">their 8:00–9:30a</div></div>
+      <div class="bar i4"></div>
+      <div>
+        <h2>Pacific Prime <span class="pill i4">HIGH RATE</span></h2>
+        <p>West Coast execs at morning peak while EST prospects are at lunch. Turns dead East Coast noon into a live rate window. Stagger team lunch to 12:30–1:30 to protect it.</p>
+        <div class="geo">CA &middot; SEA &middot; PDX &middot; LV &middot; AZ (summer)</div>
+      </div>
+    </div>
+
+    <div class="block">
+      <div class="when"><div class="est">1:30 – 4:00</div><div class="local">CST 12:30–3p &middot; PST 10:30a–1p</div></div>
+      <div class="bar i2"></div>
+      <div>
+        <h2>Mixed-Zone Volume <span class="pill i2">VOLUME</span></h2>
+        <p>Indeterminate-rate midday stretch — raw connects come from volume, not efficiency. Sequences, callbacks, follow-ups, lower-priority accounts across all zones.</p>
+        <div class="geo">ALL ZONES &middot; SEQUENCE TASKS &middot; CALLBACKS</div>
+      </div>
+    </div>
+
+    <div class="block">
+      <div class="when"><div class="est">4:00 – 5:00</div><div class="local">their 4:00–5:00p</div></div>
+      <div class="bar i5"></div>
+      <div>
+        <h2>Eastern Closers <span class="pill i5">POWER</span></h2>
+        <p>End-of-day desk-clearing window — gatekeepers gone, calendars open. Strongest Mon &amp; Wed per answer-rate data. EST accounts only; CST equivalent starts after shift end.</p>
+        <div class="geo">EST ONLY &middot; STRONGEST MON / WED</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="foot">
+    <div class="card dark">
+      <h3>Power Hours — No Admin</h3>
+      <ul>
+        <li><strong>Daily 8:30–9:30a</strong> — biggest gap between answer rate and current dial volume</li>
+        <li><strong>Mon &amp; Wed 4:00–5:00p</strong> — late-day EST hotspot</li>
+        <li><strong>Fri 1:00–5:00p</strong> — kill the Friday fade; rates hold through 5p</li>
+        <li><strong>Thu 1:30–2:30p</strong> — midweek afternoon spike</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Ops Notes</h3>
+      <ul>
+        <li>AZ runs PST-equivalent <strong>Mar–Nov</strong> (no DST)</li>
+      </ul>
+    </div>
+  </div>
+
+  <footer class="note">
+    <span>SOURCE: ANSWER-RATE + DIAL-ACTIVITY HEATMAPS &middot; Q3 2026</span>
+    <span>DARKER = HIGHER PRIORITY &middot; MIRROR OF REPORT GRADIENT</span>
+  </footer>
+
+</div>
+</body>
+</html>

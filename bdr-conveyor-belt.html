@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The BDR Conveyor Belt — Account Motion Playbook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F4F5F3;
+    --ink:#1B2228;
+    --steel:#5B6770;
+    --belt:#2A3238;
+    --belt-dk:#20272C;
+    --safety:#FFC400;
+    --go:#1F8A4C;
+    --hold:#3172B6;
+    --stop:#C43D2F;
+    --card:#FFFFFF;
+    --line:#D6DAD8;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Archivo',sans-serif;
+    font-size:15px;
+    line-height:1.5;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:0 28px 64px;}
+
+  /* ---------- HEADER ---------- */
+  .topbar{
+    background:var(--ink);
+    color:#fff;
+    padding:10px 0;
+  }
+  .topbar .wrap{
+    padding-top:0;padding-bottom:0;
+    display:flex;justify-content:space-between;align-items:center;
+    font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.08em;
+  }
+  .topbar .tag{color:var(--safety);}
+  header.hero{padding:44px 0 8px;}
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--steel);margin-bottom:10px;
+  }
+  h1{
+    font-family:'Big Shoulders Display',sans-serif;
+    font-weight:800;font-size:clamp(44px,7vw,76px);
+    line-height:.95;text-transform:uppercase;letter-spacing:.01em;
+  }
+  h1 .yellow{color:transparent;-webkit-text-stroke:2px var(--ink);}
+  .thesis{
+    max-width:640px;margin-top:16px;font-size:17px;color:var(--ink);
+  }
+  .thesis strong{background:var(--safety);padding:0 4px;}
+
+  /* ---------- HAZARD STRIPE ---------- */
+  .hazard{
+    height:12px;margin:36px 0 0;
+    background:repeating-linear-gradient(45deg,var(--safety) 0 14px,var(--ink) 14px 28px);
+  }
+
+  /* ---------- BELT ---------- */
+  .beltzone{background:var(--belt);padding:40px 0 48px;color:#E8ECEA;}
+  .beltzone .zonehead{
+    display:flex;justify-content:space-between;align-items:baseline;margin-bottom:28px;
+  }
+  .beltzone h2{
+    font-family:'Big Shoulders Display',sans-serif;font-weight:800;
+    font-size:30px;text-transform:uppercase;letter-spacing:.04em;color:#fff;
+  }
+  .beltzone .zonehead span{
+    font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--safety);letter-spacing:.1em;
+  }
+  .stations{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;
+  }
+  .station{
+    background:var(--belt-dk);border:1px solid #3A444B;border-top:4px solid var(--safety);
+    padding:18px 16px 20px;position:relative;
+  }
+  .station .num{
+    font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;
+    color:var(--safety);letter-spacing:.15em;
+  }
+  .station h3{
+    font-family:'Big Shoulders Display',sans-serif;font-weight:800;
+    font-size:26px;text-transform:uppercase;letter-spacing:.05em;color:#fff;margin:4px 0 8px;
+  }
+  .station p{font-size:13.5px;color:#B7C0BD;line-height:1.55;}
+  .station .arrow{
+    position:absolute;right:-13px;top:50%;transform:translateY(-50%);
+    color:var(--safety);font-size:18px;font-weight:700;z-index:2;
+  }
+  .station:last-child .arrow{display:none;}
+
+  /* belt graphic */
+  .belt{
+    height:34px;position:relative;overflow:hidden;
+    background:repeating-linear-gradient(90deg,#39434A 0 46px,#2F383E 46px 92px);
+    border-top:3px solid var(--safety);border-bottom:3px solid var(--safety);
+    animation:beltmove 6s linear infinite;
+  }
+  @keyframes beltmove{from{background-position:0 0;}to{background-position:92px 0;}}
+  @media (prefers-reduced-motion: reduce){.belt{animation:none;}}
+  .rollers{display:flex;justify-content:space-between;padding:6px 8px 0;}
+  .rollers i{
+    width:14px;height:14px;border-radius:50%;
+    background:#4A555C;border:2px solid #333C42;display:block;
+  }
+  .beltcaption{
+    margin-top:14px;font-family:'IBM Plex Mono',monospace;font-size:12px;
+    color:#8C979D;letter-spacing:.06em;text-align:center;
+  }
+  .beltcaption b{color:var(--safety);font-weight:600;}
+
+  /* ---------- RESOLVE OUTCOMES ---------- */
+  section{padding:46px 0 0;}
+  .secthead{display:flex;align-items:baseline;gap:14px;margin-bottom:20px;}
+  .secthead h2{
+    font-family:'Big Shoulders Display',sans-serif;font-weight:800;
+    font-size:28px;text-transform:uppercase;letter-spacing:.04em;
+  }
+  .secthead .mono{
+    font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--steel);letter-spacing:.1em;
+  }
+  .outcomes{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+  .outcome{
+    background:var(--card);border:1px solid var(--line);padding:20px 18px;
+    border-left:6px solid var(--steel);
+  }
+  .outcome.hold{border-left-color:var(--hold);}
+  .outcome.go{border-left-color:var(--go);}
+  .outcome.stop{border-left-color:var(--stop);}
+  .outcome .sig{
+    font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;
+    letter-spacing:.14em;text-transform:uppercase;margin-bottom:6px;display:inline-block;
+    padding:3px 8px;color:#fff;
+  }
+  .hold .sig{background:var(--hold);}
+  .go .sig{background:var(--go);}
+  .stop .sig{background:var(--stop);}
+  .outcome h3{font-size:17px;font-weight:700;margin-bottom:8px;}
+  .outcome p{font-size:13.5px;color:#4A555C;}
+  .outcome .action{
+    margin-top:12px;padding-top:10px;border-top:1px dashed var(--line);
+    font-size:13px;font-weight:600;
+  }
+  .outcome .action span{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--steel);display:block;font-weight:500;letter-spacing:.08em;margin-bottom:2px;}
+
+  /* ---------- DAILY MOTIONS ---------- */
+  .motions{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+  .motion{
+    background:var(--ink);color:#E8ECEA;padding:22px 20px;position:relative;
+  }
+  .motion::before{
+    content:"";position:absolute;top:0;left:0;right:0;height:6px;
+    background:repeating-linear-gradient(45deg,var(--safety) 0 10px,var(--ink) 10px 20px);
+  }
+  .motion h3{
+    font-family:'Big Shoulders Display',sans-serif;font-weight:800;
+    font-size:24px;text-transform:uppercase;letter-spacing:.05em;color:var(--safety);
+    margin:6px 0 4px;
+  }
+  .motion .sub{font-size:13px;color:#B7C0BD;margin-bottom:14px;}
+  .motion ul{list-style:none;}
+  .motion li{
+    display:flex;justify-content:space-between;align-items:baseline;
+    padding:7px 0;border-bottom:1px solid #333C42;font-size:13.5px;
+  }
+  .motion li:last-child{border-bottom:none;}
+  .motion li b{
+    font-family:'IBM Plex Mono',monospace;font-size:14px;color:#fff;font-weight:600;
+  }
+  .everyday{
+    font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.16em;
+    color:#8C979D;text-transform:uppercase;
+  }
+
+  /* ---------- BOOK HEALTH ---------- */
+  .health{
+    background:var(--card);border:1px solid var(--line);padding:26px 24px;
+  }
+  .healthtop{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap;margin-bottom:18px;}
+  .bignum{
+    font-family:'Big Shoulders Display',sans-serif;font-weight:800;
+    font-size:72px;line-height:1;letter-spacing:.01em;
+  }
+  .bignum small{font-size:30px;vertical-align:top;}
+  .healthtop p{max-width:520px;font-size:14px;color:#4A555C;}
+  .bar{display:flex;height:44px;border:2px solid var(--ink);}
+  .bar div{
+    display:flex;align-items:center;justify-content:center;
+    font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;
+    letter-spacing:.06em;color:#fff;text-transform:uppercase;
+  }
+  .bar .b1{width:35%;background:var(--steel);}
+  .bar .b2{width:45%;background:var(--hold);}
+  .bar .b3{width:20%;background:var(--go);}
+  .barlegend{
+    display:flex;gap:24px;margin-top:10px;flex-wrap:wrap;
+    font-size:12.5px;color:#4A555C;
+  }
+  .barlegend b{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink);}
+
+  /* ---------- PRINCIPLE STRIP ---------- */
+  .principle{
+    margin-top:48px;background:var(--safety);padding:22px 0;
+  }
+  .principle .wrap{padding-bottom:0;display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;}
+  .principle h2{
+    font-family:'Big Shoulders Display',sans-serif;font-weight:800;
+    font-size:clamp(22px,3.4vw,34px);text-transform:uppercase;letter-spacing:.03em;
+  }
+  .principle p{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.08em;max-width:360px;}
+
+  @media (max-width:820px){
+    .stations,.outcomes,.motions{grid-template-columns:1fr;}
+    .station .arrow{display:none;}
+    .bar .b1,.bar .b2,.bar .b3{font-size:9px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="wrap">
+    <span>SAGE INTACCT · BDR OPERATIONS</span>
+    <span class="tag">ZONE: ACCOUNT MOTION</span>
+  </div>
+</div>
+
+<div class="wrap">
+  <header class="hero">
+    <div class="eyebrow">Team Reference · How Your Book Actually Works</div>
+    <h1>The BDR<br><span class="yellow">Conveyor Belt</span></h1>
+    <p class="thesis">Your book of business is not a warehouse — it's a production line. Accounts come in, get worked, get resolved, and move out. <strong>If the belt stops moving, the pipeline starves.</strong></p>
+  </header>
+</div>
+
+<div class="hazard"></div>
+
+<!-- THE BELT -->
+<div class="beltzone">
+  <div class="wrap" style="padding-bottom:0;">
+    <div class="zonehead">
+      <h2>The Line: Four Stations</h2>
+      <span>EVERY ACCOUNT PASSES THROUGH ALL FOUR</span>
+    </div>
+    <div class="stations">
+      <div class="station">
+        <div class="num">STATION 01</div>
+        <h3>Ingest</h3>
+        <p>Prospect and load new accounts onto the belt. Right vertical, right size, right systems footprint. No intake, no output.</p>
+        <span class="arrow">▶</span>
+      </div>
+      <div class="station">
+        <div class="num">STATION 02</div>
+        <h3>Process</h3>
+        <p>Work the account through outreach: calls, sequences, LinkedIn. Multi-thread the finance office until you get a real answer.</p>
+        <span class="arrow">▶</span>
+      </div>
+      <div class="station">
+        <div class="num">STATION 03</div>
+        <h3>Resolve</h3>
+        <p>Every worked account lands in one of three outcomes: Not Now, Qualified, or True No. "No answer yet" is not a resting state.</p>
+        <span class="arrow">▶</span>
+      </div>
+      <div class="station">
+        <div class="num">STATION 04</div>
+        <h3>Digest</h3>
+        <p>Move resolved accounts off your active belt — into a nurture plan or out of the book entirely. Dead weight slows the line.</p>
+      </div>
+    </div>
+    <div class="belt"></div>
+    <div class="rollers">
+      <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+    </div>
+    <p class="beltcaption">FLOW DIRECTION: INGEST → DIGEST · <b>THE BELT RUNS EVERY DAY</b></p>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- OUTCOMES -->
+  <section>
+    <div class="secthead">
+      <h2>Station 03 — The Three Outcomes</h2>
+      <span class="mono">EVERY REAL ANSWER SORTS INTO ONE LANE</span>
+    </div>
+    <div class="outcomes">
+      <div class="outcome hold">
+        <span class="sig">Lane A · Not Now</span>
+        <h3>Right fit, wrong timing</h3>
+        <p>Interest exists but the timing is off — mid-budget cycle, contract not up, priorities elsewhere. This account is warm inventory, not a loss.</p>
+        <div class="action"><span>NEXT MOVE</span>Set a dated follow-up task. Log the reason and the re-engage trigger. Keep light-touch warming until then.</div>
+      </div>
+      <div class="outcome go">
+        <span class="sig">Lane B · Qualified</span>
+        <h3>Book the discovery call</h3>
+        <p>Pain confirmed, authority reachable, willingness to talk. This is the whole point of the belt — convert the conversation into a QDC.</p>
+        <div class="action"><span>NEXT MOVE</span>Lock the QDC on calendar before you hang up. Confirm attendees, send the invite, prep the AE handoff.</div>
+      </div>
+      <div class="outcome stop">
+        <span class="sig">Lane C · True No</span>
+        <h3>Genuinely disqualified</h3>
+        <p>Recently implemented a new GL system, or zero interest in switching or even learning about one. Respect the no — it's information, not failure.</p>
+        <div class="action"><span>NEXT MOVE</span>Log the disqualifier (system + go-live date if known). Route to long-term nurture or remove. Free the belt space.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DAILY MOTIONS -->
+  <section>
+    <div class="secthead">
+      <h2>The Three Daily Motions</h2>
+      <span class="mono">ALL THREE, EVERY DAY — NOT ONE PER DAY</span>
+    </div>
+    <div class="motions">
+      <div class="motion">
+        <span class="everyday">Every day</span>
+        <h3>Prospect</h3>
+        <p class="sub">Feed the belt. New accounts in.</p>
+        <ul>
+          <li>New accounts added <b>15</b></li>
+          <li>New contacts sequenced <b>20</b></li>
+          <li>Research blocks <b>2 × 30 min</b></li>
+        </ul>
+      </div>
+      <div class="motion">
+        <span class="everyday">Every day</span>
+        <h3>Warm</h3>
+        <p class="sub">Keep the belt moving. Touches out.</p>
+        <ul>
+          <li>Dials <b>80</b></li>
+          <li>Emails / sequence steps <b>25</b></li>
+          <li>LinkedIn touches <b>10</b></li>
+          <li>Live connects <b>5+</b></li>
+        </ul>
+      </div>
+      <div class="motion">
+        <span class="everyday">Every day</span>
+        <h3>Capitalize</h3>
+        <p class="sub">Take the output. Convert what's ready.</p>
+        <ul>
+          <li>QDCs booked <b>1 / day pace</b></li>
+          <li>Weekly QDC target <b>3–5</b></li>
+          <li>Follow-ups closed out <b>100%</b></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- BOOK HEALTH -->
+  <section>
+    <div class="secthead">
+      <h2>Belt Capacity — A Healthy Book</h2>
+      <span class="mono">VOLUME PROTECTS YOU FROM BAD DAYS</span>
+    </div>
+    <div class="health">
+      <div class="healthtop">
+        <div class="bignum">300<small>+</small></div>
+        <p>A healthy book holds <strong>at least 300 active accounts</strong>, distributed across belt stages. Below 300, one bad week empties your funnel. The daily motions keep this number stable: ingest replaces what you digest.</p>
+      </div>
+      <div class="bar" role="img" aria-label="Book distribution: roughly 105 fresh, 135 in active outreach, 60 prioritized">
+        <div class="b1">~105 FRESH</div>
+        <div class="b2">~135 IN ACTIVE OUTREACH</div>
+        <div class="b3">~60 PRIORITIZED</div>
+      </div>
+      <div class="barlegend">
+        <span><b>FRESH</b> — added, entering sequence</span>
+        <span><b>ACTIVE</b> — mid-sequence, being worked</span>
+        <span><b>PRIORITIZED</b> — engaged, follow-up dated, QDC-adjacent</span>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<!-- PRINCIPLE -->
+<div class="principle">
+  <div class="wrap">
+    <h2>The belt never stops. Neither do you.</h2>
+    <p>INGEST DAILY · WARM DAILY · CAPITALIZE DAILY · DIGEST WEEKLY · HOLD 300+</p>
+  </div>
+</div>
+
+</body>
+</html>

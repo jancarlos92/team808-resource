@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Anatomy of a Cold Call — BDR Onboarding</title>
+<style>
+  :root{
+    --ink:#16202e;
+    --ink-soft:#4a5568;
+    --ink-faint:#8a94a3;
+    --paper:#fafbfc;
+    --card:#ffffff;
+    --line:#e3e7ec;
+    --green:#007a2f;
+    --green-bright:#00b43f;
+    --green-tint:#eafaf0;
+    --amber:#b45309;
+    --amber-tint:#fef6ea;
+    --blue:#1d4ed8;
+    --blue-tint:#eef3fe;
+    --violet:#6d28d9;
+    --violet-tint:#f3effc;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;
+    background:var(--paper);
+    color:var(--ink);
+    line-height:1.5;
+    padding:40px 20px 80px;
+  }
+  .page{max-width:860px;margin:0 auto;}
+
+  /* Header */
+  header{margin-bottom:36px;border-bottom:3px solid var(--ink);padding-bottom:20px;}
+  .eyebrow{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--green);margin-bottom:6px;}
+  h1{font-size:34px;font-weight:800;letter-spacing:-.02em;line-height:1.1;}
+  .subtitle{margin-top:8px;color:var(--ink-soft);font-size:15px;max-width:620px;}
+
+  /* Flow spine */
+  .stage{position:relative;padding-left:56px;margin-bottom:8px;}
+  .stage::before{
+    content:"";position:absolute;left:19px;top:44px;bottom:-8px;width:2px;background:var(--line);
+  }
+  .stage:last-of-type::before{display:none;}
+  .stage-num{
+    position:absolute;left:0;top:0;width:40px;height:40px;border-radius:50%;
+    background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;
+    font-weight:800;font-size:16px;
+  }
+  .stage-label{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint);margin-top:4px;}
+  .stage h2{font-size:21px;font-weight:800;letter-spacing:-.01em;margin:2px 0 10px;}
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:10px;
+    padding:18px 20px;margin-bottom:14px;
+  }
+  .card p{font-size:14px;color:var(--ink-soft);margin-bottom:10px;}
+  .card p:last-child{margin-bottom:0;}
+  .card strong{color:var(--ink);}
+
+  .goal{
+    display:inline-block;font-size:12px;font-weight:700;color:var(--green);
+    background:var(--green-tint);border-radius:5px;padding:3px 10px;margin-bottom:10px;
+  }
+
+  .say{
+    border-left:3px solid var(--green-bright);background:var(--green-tint);
+    padding:10px 14px;border-radius:0 8px 8px 0;font-size:13.5px;color:var(--ink);
+    font-style:italic;margin:10px 0 4px;
+  }
+
+  .rule{
+    display:flex;gap:10px;align-items:flex-start;background:var(--amber-tint);
+    border:1px solid #f0dcbe;border-radius:8px;padding:12px 14px;margin-top:12px;font-size:13.5px;
+  }
+  .rule .flag{font-weight:800;color:var(--amber);white-space:nowrap;font-size:12px;letter-spacing:.06em;text-transform:uppercase;padding-top:1px;}
+
+  /* Three paths */
+  .paths{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:14px 0 6px;}
+  .path{
+    border:1px solid var(--line);border-radius:10px;background:var(--card);
+    padding:16px;display:flex;flex-direction:column;
+  }
+  .path-tag{font-size:10.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;border-radius:4px;padding:2px 8px;display:inline-block;width:fit-content;margin-bottom:8px;}
+  .path h3{font-size:15px;font-weight:800;margin-bottom:6px;line-height:1.25;}
+  .path p{font-size:12.5px;color:var(--ink-soft);margin-bottom:8px;}
+  .path .say{font-size:12px;padding:8px 10px;margin-top:auto;}
+  .path.software{border-top:3px solid var(--blue);}
+  .path.software .path-tag{background:var(--blue-tint);color:var(--blue);}
+  .path.software .say{border-color:var(--blue);background:var(--blue-tint);}
+  .path.process{border-top:3px solid var(--violet);}
+  .path.process .path-tag{background:var(--violet-tint);color:var(--violet);}
+  .path.process .say{border-color:var(--violet);background:var(--violet-tint);}
+  .path.industry{border-top:3px solid var(--green-bright);position:relative;box-shadow:0 4px 14px rgba(0,122,47,.10);}
+  .path.industry .path-tag{background:var(--green-tint);color:var(--green);}
+  .strongest{
+    position:absolute;top:-11px;right:12px;background:var(--green);color:#fff;
+    font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+    border-radius:20px;padding:3px 10px;
+  }
+  .path-note{font-size:12.5px;color:var(--ink-faint);margin-top:8px;}
+
+  /* Table */
+  table{width:100%;border-collapse:collapse;font-size:13px;margin-top:10px;}
+  th{background:var(--ink);color:#fff;text-align:left;padding:8px 12px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;}
+  td{border:1px solid var(--line);padding:9px 12px;vertical-align:top;background:#fff;}
+  td:first-child{font-weight:700;white-space:nowrap;}
+
+  /* Checklist */
+  .checklist{list-style:none;margin-top:6px;}
+  .checklist li{
+    font-size:13.5px;padding:8px 0 8px 28px;position:relative;border-bottom:1px solid var(--line);color:var(--ink-soft);
+  }
+  .checklist li:last-child{border-bottom:none;}
+  .checklist li::before{
+    content:"✓";position:absolute;left:2px;top:7px;color:var(--green-bright);font-weight:800;
+  }
+  .checklist strong{color:var(--ink);}
+
+  footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--line);font-size:12px;color:var(--ink-faint);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+
+  @media(max-width:720px){
+    .paths{grid-template-columns:1fr;}
+    h1{font-size:27px;}
+    .stage{padding-left:48px;}
+  }
+  @media print{
+    body{padding:0;background:#fff;}
+    .path.industry{box-shadow:none;}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+<header>
+  <div class="eyebrow">BDR Onboarding · Call Foundations</div>
+  <h1>Anatomy of a Cold Call</h1>
+  <p class="subtitle">Every call follows the same skeleton: earn the right to ask a question, pick a discovery path, convert pain into urgency, and close on the calendar. Master the structure first — the words come later.</p>
+</header>
+
+<!-- STAGE 1 -->
+<div class="stage">
+  <div class="stage-num">1</div>
+  <div class="stage-label">First 10 seconds</div>
+  <h2>Introduction</h2>
+  <div class="card">
+    <span class="goal">Goal: Earn 30 more seconds</span>
+    <p>Open with a <strong>temperament check</strong> — a simple "how are you?" tells you in two seconds what kind of call this is going to be. Rushed, friendly, guarded, distracted — their tone sets your pace before you've said anything about why you called.</p>
+    <div class="say">"Hey [Name], this is [You] over at Sage Intacct — how are you doing today?"</div>
+    <p style="margin-top:12px;">If they ask <strong>"how are you?" back</strong>, that's your in. Answer like a real person — one quick, human beat about your day. This is a <strong>pattern interrupt</strong>: nobody cold calling ever actually answers that question, so being briefly human breaks the telemarketer script in their head and makes you a person instead of a pitch.</p>
+    <div class="say">"Honestly? Doing great — just got my second coffee in, so you caught me at peak performance. I appreciate you asking."</div>
+    <p style="margin-top:12px;">Then transition into a <strong>permission-based opener</strong> — honest about the cold call, asking for a small, specific slice of time. Permission earns you a listener instead of a hostage.</p>
+    <div class="say">"Look, I'll be upfront with you — this is a cold call. Can I take 30 seconds to tell you why I'm reaching out, and then you can decide if it's worth continuing?"</div>
+  </div>
+</div>
+
+<!-- STAGE 2 -->
+<div class="stage">
+  <div class="stage-num">2</div>
+  <div class="stage-label">The bridge to discovery</div>
+  <h2>Pain Prop or Value Prop</h2>
+  <div class="card">
+    <span class="goal">Goal: Give them a reason the question matters</span>
+    <p>Before you can ask a discovery question, you have to justify it. Lead with a <strong>pain prop</strong> (a specific problem companies like theirs face) or a <strong>value prop</strong> (a specific outcome we deliver). This is one or two sentences — not a pitch. It exists only to make your discovery question feel relevant instead of random.</p>
+    <div class="say">"The reason I'm calling — we work with a lot of [industry] finance teams whose close drags past day ten because everything lives in spreadsheets outside the GL..."</div>
+    <p style="margin-top:10px;">Notice the structure: the pain prop <strong>leads directly into</strong> the discovery question. It's a ramp, not a speech.</p>
+  </div>
+</div>
+
+<!-- STAGE 3 -->
+<div class="stage">
+  <div class="stage-num">3</div>
+  <div class="stage-label">The fork in the road</div>
+  <h2>Discovery Question — Pick Your Path</h2>
+  <div class="card" style="border:none;background:transparent;padding:0 0 4px;">
+    <p style="font-size:14px;color:var(--ink-soft);">Your discovery question should be <strong>topical but able to whittle down to a direction</strong>. Start broad enough that they can answer easily, but pointed enough that any answer gives you somewhere to go. There are three paths — every one of them should point back to something Sage Intacct specifically solves.</p>
+  </div>
+
+  <div class="paths">
+    <div class="path software">
+      <span class="path-tag">Path 1</span>
+      <h3>The Software Path</h3>
+      <p>Ask about their tech stack to hunt for pain <em>inside</em> it. What GL are they on? What's bolted around it? Where do spreadsheets fill the gaps?</p>
+      <p>Aging systems, heavy Excel workarounds, and disconnected tools are all pain you can name.</p>
+      <div class="say">"What are you running for your accounting system today — and what's living outside of it in spreadsheets?"</div>
+    </div>
+
+    <div class="path process">
+      <span class="path-tag">Path 2</span>
+      <h3>The Accounting Process Path</h3>
+      <p>Ask about a general finance process every team runs: <strong>month-end close</strong>, <strong>reconciliations</strong>, or <strong>intercompany transactions</strong> / multi-entity consolidations.</p>
+      <p>Slow closes and manual eliminations are universal pains we automate.</p>
+      <div class="say">"How long does your close typically take — and how much of the consolidation is still manual?"</div>
+    </div>
+
+    <div class="path industry">
+      <span class="strongest">Strongest</span>
+      <span class="path-tag">Path 3</span>
+      <h3>The Industry / Operations Path</h3>
+      <p>Ask about something <strong>unique to how their business runs</strong>. This proves you understand their world — and it's the hardest for them to brush off.</p>
+      <p>Example: hotels have to break down how rooms are booked through OTAs (online travel agencies) — each channel with its own fees, remittance timing, and reconciliation headache.</p>
+      <div class="say">"How is your team handling revenue breakdown across your OTA channels versus direct bookings?"</div>
+    </div>
+  </div>
+  <p class="path-note">Whichever path you take, the destination is the same: surface a pain that maps to what we do — multi-entity consolidation, automation of manual processes, real-time dimensional reporting, and connected finance operations.</p>
+</div>
+
+<!-- STAGE 4 -->
+<div class="stage">
+  <div class="stage-num">4</div>
+  <div class="stage-label">Pain → business impact</div>
+  <h2>The Urgency Bridge</h2>
+  <div class="card">
+    <span class="goal">Goal: Make the pain expensive to ignore</span>
+    <p>A pain point alone doesn't book meetings — <strong>the cost of the pain does</strong>. The urgency bridge connects what they told you to its business impact, then to how solving it helps. Three moves:</p>
+    <table>
+      <tr><th>Move</th><th>What you're doing</th><th>Sounds like</th></tr>
+      <tr>
+        <td>1. Reflect</td>
+        <td>Repeat the pain in their words so they hear themselves say it.</td>
+        <td>"So your team is closing the books in fifteen days and half of that is chasing spreadsheets..."</td>
+      </tr>
+      <tr>
+        <td>2. Amplify</td>
+        <td>Attach the business impact — time, headcount, decisions delayed, growth blocked, audit risk.</td>
+        <td>"...which means leadership is making decisions on numbers that are two weeks stale, every month."</td>
+      </tr>
+      <tr>
+        <td>3. Resolve</td>
+        <td>State plainly how this changes with us — outcome first, not features.</td>
+        <td>"Teams like yours are cutting close time in half and getting real-time visibility by entity, location, and channel. That's exactly what this conversation would cover."</td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<!-- STAGE 5 -->
+<div class="stage">
+  <div class="stage-num">5</div>
+  <div class="stage-label">Calendar or nothing</div>
+  <h2>The Close</h2>
+  <div class="card">
+    <span class="goal">Goal: A confirmed time + a backup</span>
+    <p>Don't ask <em>if</em> they want to meet — direct them to their calendar and ask <em>when</em>. Offer at least <strong>two days</strong> and a <strong>morning or afternoon</strong> choice so they're picking between options, not deciding yes/no.</p>
+    <div class="say">"Do me a favor and pull up your calendar — how does Tuesday or Thursday look? Better morning or afternoon?"</div>
+    <p style="margin-top:12px;"><strong>Always lock a backup time.</strong> Meetings slip. A backup keeps the deal alive without a new cold call.</p>
+    <div class="say">"Perfect, Thursday at 10. And just in case something comes up on your end — would the same time Friday work as a backup?"</div>
+    <div class="rule">
+      <span class="flag">Hard rule</span>
+      <span>Never say the meeting is with a <strong>"product specialist."</strong> It is always with a <strong>colleague</strong>. "I'd love to set up time with a colleague of mine who works with [industry] finance teams every day." Specialist language signals a sales demo; colleague language signals a conversation.</span>
+    </div>
+  </div>
+</div>
+
+<!-- Recap -->
+<div class="card" style="margin-top:24px;">
+  <div class="stage-label" style="margin-bottom:6px;">Pre-dial mental checklist</div>
+  <ul class="checklist">
+    <li><strong>Intro:</strong> Temperament check ("how are you?") → human beat if they ask back → permission-based opener for 30 seconds.</li>
+    <li><strong>Prop:</strong> One pain or value statement that ramps into my question.</li>
+    <li><strong>Path:</strong> I've picked my discovery path (software / process / industry) before I dial — industry first when I know their business.</li>
+    <li><strong>Bridge:</strong> Reflect the pain → amplify the business impact → resolve with the outcome.</li>
+    <li><strong>Close:</strong> Two days, morning or afternoon, backup time locked, meeting is with a <strong>colleague</strong>.</li>
+  </ul>
+</div>
+
+<footer>
+  <span>Sage Intacct · BDR Onboarding Resource</span>
+  <span>Structure first. Words second. Reps forever.</span>
+</footer>
+
+</div>
+</body>
+</html>
