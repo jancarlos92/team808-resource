@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Battle Cards — BDR Training</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f0f0f0; --surface:#ffffff; --surface2:#eaf4f1; --surface3:#d8ede8;
+    --border:#b8d9d0; --border-bright:#3DA688;
+    --accent:#2A6B5A; --accent2:#3DA688; --accent3:#5CC98A;
+    --accent-dim:#2A6B5A18; --accent2-dim:#3DA68820;
+    --warn:#c97a00; --warn-dim:#c97a0018; --danger:#cc3333; --danger-dim:#cc333315;
+    --text:#1a2e28; --text-mid:#2A6B5A; --text-dim:#6b9e90; --green-hi:#3DA68820;
+    --mono:'IBM Plex Mono',monospace; --sans:'DM Sans',sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;line-height:1.55;}
+  .topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:20;flex-wrap:wrap;}
+  .logo{font-family:var(--mono);font-weight:600;font-size:13px;letter-spacing:.06em;color:var(--accent);}
+  .logo span{color:var(--text-dim);font-weight:400;}
+  .tabs{display:flex;gap:6px;margin-left:auto;}
+  .tab{font-size:12px;font-weight:600;color:var(--text-mid);text-decoration:none;padding:7px 13px;border-radius:6px;border:1px solid transparent;}
+  .tab:hover{background:var(--surface2);}
+  .tab.active{background:var(--accent2-dim);border-color:var(--border);color:var(--accent);}
+  .page{max-width:940px;margin:0 auto;padding:34px 20px 70px;}
+  .eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent2);margin-bottom:8px;}
+  h1{font-size:32px;font-weight:700;letter-spacing:-.02em;line-height:1.1;}
+  .subtitle{margin-top:8px;color:var(--text-mid);font-size:14px;max-width:660px;}
+  .ground-rule{margin-top:18px;background:var(--warn-dim);border:1px solid var(--warn);border-radius:8px;padding:12px 16px;font-size:13px;}
+  .ground-rule b{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--warn);display:block;margin-bottom:4px;}
+
+  .compnav{position:sticky;top:52px;z-index:15;background:var(--bg);padding:14px 0 10px;display:flex;gap:8px;flex-wrap:wrap;border-bottom:1px solid var(--border);margin-bottom:6px;}
+  .comp-chip{font-size:12px;font-weight:700;color:var(--text-mid);text-decoration:none;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:7px 14px;}
+  .comp-chip:hover{border-color:var(--danger);color:var(--danger);}
+
+  /* battle sections: always visible, stacked */
+  .section-block{display:flex !important;flex-direction:column;gap:14px;margin-top:36px;scroll-margin-top:120px;}
+.panel-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 4px;
+  }
+.panel-stepnum {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+    background: var(--accent-dim);
+    padding: 3px 8px;
+    border-radius: 3px;
+  }
+.panel-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+  }
+.panel-hint {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-style: italic;
+  }
+  .battle-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px 6px 0 0;
+    border-bottom: none;
+  }
+.battle-vs {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--danger);
+    letter-spacing: 0.1em;
+    font-weight: 600;
+  }
+.battle-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+  }
+.battle-when {
+    margin-left: auto;
+    font-size: 10px;
+    color: var(--text-dim);
+    font-style: italic;
+  }
+.battle-positioning {
+    background: var(--accent-dim);
+    border: 1px solid var(--accent);
+    border-radius: 5px;
+    padding: 11px 14px;
+    font-size: 12px;
+    color: var(--text);
+    line-height: 1.65;
+  }
+.battle-positioning strong { color: var(--accent); font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; display: block; margin-bottom: 5px; }
+.battle-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+  }
+.battle-table th {
+    background: var(--surface2);
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 8px 10px;
+    text-align: left;
+    border: 1px solid var(--border);
+  }
+.battle-table th.win { color: var(--accent); }
+.battle-table th.lose { color: var(--danger); }
+.battle-table td {
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    vertical-align: top;
+    line-height: 1.5;
+    color: var(--text-mid);
+  }
+.battle-table tr:nth-child(even) td { background: var(--surface2); }
+.battle-table td.area { color: var(--text); font-weight: 500; font-size: 11px; }
+.battle-table td.win { color: var(--accent); }
+.battle-table td.lose { color: var(--text-dim); font-style: italic; }
+.battle-wedge {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 12px 14px;
+  }
+.battle-wedge-title {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    color: var(--accent2);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+.battle-wedge-q {
+    font-size: 12px;
+    color: var(--text-mid);
+    padding: 6px 10px;
+    background: var(--surface2);
+    border-left: 2px solid var(--accent2);
+    border-radius: 0 4px 4px 0;
+    margin-bottom: 6px;
+    line-height: 1.5;
+  }
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 12px 14px;
+  }
+    font-size: 11px;
+    color: var(--text-mid);
+    padding: 5px 10px;
+    border-left: 2px solid var(--accent);
+    background: var(--accent-dim);
+    border-radius: 0 4px 4px 0;
+    margin-bottom: 5px;
+    line-height: 1.45;
+  }
+.battle-talk {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 12px 14px;
+  }
+.battle-talk-step {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 8px;
+    align-items: flex-start;
+  }
+.battle-talk-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    color: var(--warn);
+    background: var(--warn-dim);
+    border: 1px solid var(--warn);
+    border-radius: 3px;
+    padding: 2px 7px;
+    white-space: nowrap;
+    margin-top: 1px;
+    flex-shrink: 0;
+  }
+.battle-talk-text { font-size: 12px; color: var(--text); line-height: 1.6; }
+.battle-landmine {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 12px 14px;
+  }
+.landmine-row { margin-bottom: 9px; }
+.landmine-dont { font-size: 11px; color: var(--danger); margin-bottom: 3px; }
+.landmine-do { font-size: 11px; color: var(--accent); }
+.battle-cta {
+    background: var(--accent-dim);
+    border: 1px solid var(--accent);
+    border-radius: 5px;
+    padding: 12px 14px;
+    font-size: 12px;
+    color: var(--text);
+    line-height: 1.65;
+  }
+.battle-cta strong { color: var(--accent); font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; display: block; margin-bottom: 5px; }
+.battle-honest {
+    background: var(--surface2);
+    border: 1px solid var(--border-bright);
+    border-radius: 5px;
+    padding: 12px 14px;
+  }
+.battle-honest-title {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 7px;
+  }
+.battle-honest-item {
+    font-size: 11px;
+    color: var(--text-dim);
+    padding: 4px 0 4px 10px;
+    border-left: 2px solid var(--border-bright);
+    margin-bottom: 4px;
+    line-height: 1.45;
+  }
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.06em;
+  color: var(--danger); text-transform: uppercase; white-space: normal;
+}
+  footer{margin-top:44px;padding-top:14px;border-top:1px solid var(--border);font-family:var(--mono);font-size:10px;color:var(--text-dim);display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;}
+  @media(max-width:680px){h1{font-size:26px;}.compnav{top:96px;}}
+  @media print{.topbar,.compnav{display:none;}.section-block{scroll-margin-top:0;}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="logo">SAGE INTACCT <span>· BDR TRAINING</span></span>
+  <div class="tabs">
+    <a class="tab" href="./console.html">📞 Call Console</a>
+    <a class="tab" href="./training.html">📚 Training Hub</a>
+    <a class="tab" href="./objections.html">⚡ Objection Library</a>
+    <a class="tab active" href="./battlecards.html">⚔ Battle Cards</a>
+  </div>
+</div>
+
+<div class="page">
+  <div class="eyebrow">BDR Training · Competitive Intel</div>
+  <h1>The Battle Cards</h1>
+  <p class="subtitle">Positioning, comparison tables, wedge questions, and landmines for the five systems you'll hear most. Study the wedge questions hardest — the goal is never to win an argument, it's to open a door.</p>
+  <div class="ground-rule">
+    <b>The Ground Rule</b>
+    Never trash the competitor. Respect their system, then ask a question their system makes hard to answer. Prospects defend what you attack — and get curious about what you question.
+  </div>
+
+  <div class="compnav">
+    <a class="comp-chip" href="#sec-battle-r365">🍽️ vs Restaurant365</a>
+    <a class="comp-chip" href="#sec-battle-netsuite">🏨 vs NetSuite</a>
+    <a class="comp-chip" href="#sec-battle-mcleod">🚛 vs McLeod</a>
+    <a class="comp-chip" href="#sec-battle-m3">🏨 vs M3 Accounting</a>
+    <a class="comp-chip" href="#sec-battle-gp">🏢 vs Dynamics GP</a>
+  </div>
+
+<div class="section-block" id="sec-battle-r365">
+      <div class="panel-header">
+        <span class="panel-stepnum" style="background:var(--danger-dim);color:var(--danger);">⚔ BATTLE</span>
+        <span class="panel-title">Sage Intacct vs Restaurant365</span>
+        <span class="panel-hint">Use when prospect mentions R365 or hospitality</span>
+      </div>
+
+      <!-- Trigger signals -->
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:10px 14px;">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:7px;">Use When They Say</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+          <span style="background:var(--danger-dim);border:1px solid var(--danger);color:var(--danger);font-size:10px;padding:3px 9px;border-radius:12px;font-family:var(--mono);">"We use Restaurant365"</span>
+          <span style="background:var(--danger-dim);border:1px solid var(--danger);color:var(--danger);font-size:10px;padding:3px 9px;border-radius:12px;font-family:var(--mono);">"We're in restaurants / hospitality"</span>
+          <span style="background:var(--danger-dim);border:1px solid var(--danger);color:var(--danger);font-size:10px;padding:3px 9px;border-radius:12px;font-family:var(--mono);">"Better reporting across locations"</span>
+          <span style="background:var(--danger-dim);border:1px solid var(--danger);color:var(--danger);font-size:10px;padding:3px 9px;border-radius:12px;font-family:var(--mono);">"Evaluating accounting platforms"</span>
+        </div>
+      </div>
+
+      <!-- 10-second positioning -->
+      <div class="battle-positioning">
+        <strong>⚡ 10-SECOND POSITIONING — SAY THIS</strong>
+        "Restaurant365 is strong for restaurant operations and location-level workflows. Sage Intacct usually wins when finance needs scalable multi-entity accounting, faster close, and flexible reporting across properties, outlets, and business lines — especially as complexity grows."
+      </div>
+
+      <!-- Comparison table -->
+      <div style="overflow-x:auto;">
+        <table class="battle-table">
+          <thead>
+            <tr>
+              <th style="width:22%">Accounting Area</th>
+              <th style="width:22%">Why It Matters</th>
+              <th class="win" style="width:28%">✅ Sage Intacct</th>
+              <th class="lose" style="width:28%">⚠ R365 Reality</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="area">Multi-entity / multi-property consolidation</td>
+              <td>Groups expand fast: locations, entities, ownership structures</td>
+              <td class="win">Built for multi-entity consolidation + intercompany clarity</td>
+              <td class="lose">Strong for multi-location restaurants, but consolidation depth varies by structure</td>
+            </tr>
+            <tr>
+              <td class="area">Dimensional reporting</td>
+              <td>Finance needs P&L by property/outlet/channel without COA chaos</td>
+              <td class="win">Dimensions let you slice results without rebuilding chart of accounts</td>
+              <td class="lose">Strong restaurant reporting, but feels more "restaurant model" vs flexible finance dimensions</td>
+            </tr>
+            <tr>
+              <td class="area">Close speed + controls at scale</td>
+              <td>Allocations, accruals, approvals get heavier as you grow</td>
+              <td class="win">Strong financial close discipline, role controls, audit trail</td>
+              <td class="lose">Finance teams may want more ERP-grade close/controls as complexity rises</td>
+            </tr>
+            <tr>
+              <td class="area">Corporate finance visibility</td>
+              <td>Hospitality often includes lodging + F&B + events + mgmt entities</td>
+              <td class="win">Designed for broader entity types and corporate finance reporting</td>
+              <td class="lose">Excellent for restaurant-centric orgs; cross-vertical expansion may need more structure</td>
+            </tr>
+            <tr>
+              <td class="area">AP automation + spend governance</td>
+              <td>Vendor spend leakage hits margin fast</td>
+              <td class="win">Strong AP workflows, approvals, vendor analytics</td>
+              <td class="lose">AP is solid, but depth of configurable workflows varies by use case</td>
+            </tr>
+            <tr>
+              <td class="area">Budgeting / forecasting</td>
+              <td>Labor + demand swings require real forecasting</td>
+              <td class="win">Budget-to-actual, scenario planning, finance-led forecasting</td>
+              <td class="lose">Strong operational planning for restaurants; finance forecasting maturity varies</td>
+            </tr>
+            <tr>
+              <td class="area">Scaling beyond "ops-first"</td>
+              <td>Leaders need finance to drive decisions, not just report history</td>
+              <td class="win">Finance-first system optimized for accounting teams</td>
+              <td class="lose">Ops-first platform; finance-led flexibility may be the gap at scale</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Wedge questions -->
+      <div class="battle-wedge">
+        <div class="battle-wedge-title">🔍 Wedge Questions — Ask 1–2, then stop</div>
+        <div class="battle-wedge-q">"How many locations/entities do you manage — and do you consolidate across owners or management companies?"</div>
+        <div class="battle-wedge-q">"Can you get a clean P&L by location + department + channel without exporting to Excel?"</div>
+        <div class="battle-wedge-q">"How long is month-end close — and what's the #1 bottleneck?"</div>
+        <div class="battle-wedge-q">"Do you need financial reporting across multiple business lines (lodging + F&B + events)?"</div>
+        <div class="battle-wedge-q">"How confident are you that vendor spend and approvals are controlled consistently across locations?"</div>
+      </div>
+
+      <!-- Good pain signals -->
+      <div class="battle-pain">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--accent);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:8px;">✅ Good Pain Signals — Listen for These</div>
+        <div class="battle-pain-item">"We're growing and reporting is getting messy."</div>
+        <div class="battle-pain-item">"We need better consolidated reporting across entities."</div>
+        <div class="battle-pain-item">"We still pull things into spreadsheets to get leadership views."</div>
+        <div class="battle-pain-item">"Month-end close keeps slipping as we add locations."</div>
+        <div class="battle-pain-item">"We can't easily drill down into what's driving margin changes."</div>
+        <div class="battle-pain-item">"Approvals and controls aren't consistent across locations."</div>
+        <div class="battle-pain-item">"We need reporting beyond restaurants — more corporate-level finance visibility."</div>
+      </div>
+
+      <!-- Talk track -->
+      <div class="battle-talk">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--warn);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:10px;">🧠 Talk Track</div>
+        <div class="battle-talk-step">
+          <span class="battle-talk-label">RESPECT</span>
+          <span class="battle-talk-text">"Restaurant365 is great at restaurant operations and location-level workflows."</span>
+        </div>
+        <div class="battle-talk-step">
+          <span class="battle-talk-label">WEDGE</span>
+          <span class="battle-talk-text">"Where Intacct tends to win is when finance needs more scalable consolidation, cleaner close processes, and flexible reporting across multiple entity types — especially as you grow into more complexity."</span>
+        </div>
+        <div class="battle-talk-step">
+          <span class="battle-talk-label">LAND IT</span>
+          <span class="battle-talk-text">"So if your finance team is doing manual work to consolidate, drill down, or build board-ready reporting… that's exactly the gap we help close."</span>
+        </div>
+      </div>
+
+      <!-- Landmines -->
+      <div class="battle-landmine">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--danger);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:10px;">🧨 Landmines — Don't Say These</div>
+        <div class="landmine-row">
+          <div class="landmine-dont">❌ "R365 can't do that."</div>
+          <div class="landmine-do">✅ Say: "R365 is strong operationally — Intacct is typically stronger for finance-led scalability and consolidation."</div>
+        </div>
+        <div class="landmine-row">
+          <div class="landmine-dont">❌ "You should rip and replace."</div>
+          <div class="landmine-do">✅ Say: "This is about whether your system matches your next stage of growth."</div>
+        </div>
+      </div>
+
+      <!-- CTA -->
+      <div class="battle-cta">
+        <strong>🏁 CLEAN CTA</strong>
+        "If we could show you a multi-entity consolidated view with drill-down by location and department — and reduce spreadsheet reporting while tightening spend control — would it be worth 15 minutes to benchmark your current setup?"
+      </div>
+
+      <!-- When R365 wins -->
+      <div class="battle-honest">
+        <div class="battle-honest-title">🧩 When R365 Might Be the Better Fit — Be Honest</div>
+        <div class="battle-honest-item">The business is primarily restaurant-only and wants an ops-first platform</div>
+        <div class="battle-honest-item">They value restaurant-specific workflows above corporate finance complexity</div>
+        <div class="battle-honest-item">Finance reporting needs are straightforward and consolidation is light</div>
+      </div>
+
+    </div>
+
+<div class="section-block" id="sec-battle-netsuite">
+      <div class="panel-header">
+        <span class="panel-stepnum" style="background:var(--danger-dim);color:var(--danger);">⚔ BATTLE</span>
+        <span class="panel-title">Sage Intacct vs NetSuite</span>
+        <span class="panel-hint">Use when prospect mentions NetSuite or "we already have an ERP"</span>
+      </div>
+
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:10px 14px;">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:7px;">Use When They Say</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+          <span style="background:var(--danger-dim);border:1px solid var(--danger);color:var(--danger);font-size:10px;padding:3px 9px;border-radius:12px;font-family:var(--mono);">"We use NetSuite"</span>
+          <span style="background:var(--danger-dim);border:1px solid var(--danger);color:var(--danger);font-size:10px;padding:3px 9px;border-radius:12px;font-family:var(--mono);">"We already have an ERP"</span>
+          <span style="background:var(--danger-dim);border:1px solid var(--danger);color:var(--danger);font-size:10px;padding:3px 9px;border-radius:12px;font-family:var(--mono);">"Evaluating Intacct vs NetSuite"</span>
+          <span style="background:var(--danger-dim);border:1px solid var(--danger);color:var(--danger);font-size:10px;padding:3px 9px;border-radius:12px;font-family:var(--mono);">"Multi-property reporting / cleaner close"</span>
+        </div>
+      </div>
+
+      <div class="battle-positioning">
+        <strong>⚡ 10-SECOND POSITIONING — SAY THIS</strong>
+        "NetSuite is a powerful suite. Sage Intacct usually wins for hospitality finance teams that want faster close, clean multi-entity reporting, and property-level visibility without turning the finance team into system admins."
+      </div>
+
+      <div style="overflow-x:auto;">
+        <table class="battle-table">
+          <thead>
+            <tr>
+              <th style="width:22%">Accounting Area</th>
+              <th style="width:22%">Why It Matters</th>
+              <th class="win" style="width:28%">✅ Sage Intacct</th>
+              <th class="lose" style="width:28%">⚠ NetSuite Reality</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="area">Multi-entity / multi-property consolidation</td>
+              <td>Groups have multiple properties, entities, ownership structures</td>
+              <td class="win">Built to consolidate and report across entities cleanly</td>
+              <td class="lose">Strong with OneWorld, but can require heavier configuration depending on structure</td>
+            </tr>
+            <tr>
+              <td class="area">Dimensional reporting (property / dept / channel)</td>
+              <td>Finance needs P&L by property/outlet/channel without bloating COA</td>
+              <td class="win">Dimensions make reporting flexible without rebuilding the chart of accounts</td>
+              <td class="lose">Can do it with segments/classes/locations, but often more setup to match flexibility</td>
+            </tr>
+            <tr>
+              <td class="area">Close speed + less spreadsheet work</td>
+              <td>Allocations/intercompany/recons pile up fast</td>
+              <td class="win">Finance-forward workflows + repeatable reporting</td>
+              <td class="lose">Can close fast, but implementation quality determines admin burden</td>
+            </tr>
+            <tr>
+              <td class="area">Accounting-first usability</td>
+              <td>Controllers want clarity, not ERP complexity</td>
+              <td class="win">Finance-led design; easier day-to-day management</td>
+              <td class="lose">Broader suite = more complexity for pure accounting workflows</td>
+            </tr>
+            <tr>
+              <td class="area">Role-based access / property separation</td>
+              <td>Property leaders need limited views &amp; controls</td>
+              <td class="win">Strong role controls for property-level visibility</td>
+              <td class="lose">Powerful permissions, but must be tightly designed to avoid exposure/mess</td>
+            </tr>
+            <tr>
+              <td class="area">Best-of-breed hospitality integrations</td>
+              <td>Hospitality stacks are mixed and always evolving</td>
+              <td class="win">Works well as finance hub connected to best-of-breed tools</td>
+              <td class="lose">Can be suite backbone, but hospitality integrations often still require custom work</td>
+            </tr>
+            <tr>
+              <td class="area">Channel margin clarity (Direct vs OTA)</td>
+              <td>OTAs can inflate revenue while crushing profit</td>
+              <td class="win">Easier to report net revenue + fees by channel</td>
+              <td class="lose">Can report it, but often needs more segment/report design work</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="battle-wedge">
+        <div class="battle-wedge-title">🔍 Wedge Questions — Ask 1–2, then stop</div>
+        <div class="battle-wedge-q">"How many entities/properties are you consolidating today?"</div>
+        <div class="battle-wedge-q">"Can you get a property P&L + department view without exporting to spreadsheets?"</div>
+        <div class="battle-wedge-q">"How long is month-end close — and what's the most manual part?"</div>
+        <div class="battle-wedge-q">"Can you see Direct vs OTA profitability after fees, by property?"</div>
+        <div class="battle-wedge-q">"Does finance own reporting changes, or do you need admin/IT support?"</div>
+      </div>
+
+      <div class="battle-pain">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--accent);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:8px;">✅ Good Pain Signals — Listen for These</div>
+        <div class="battle-pain-item">"Consolidation takes forever."</div>
+        <div class="battle-pain-item">"We export to Excel to get property-level reporting."</div>
+        <div class="battle-pain-item">"We can't drill down by department/channel easily."</div>
+        <div class="battle-pain-item">"Close is slow because of allocations and intercompany."</div>
+        <div class="battle-pain-item">"Reporting changes take too long or require help."</div>
+        <div class="battle-pain-item">"OTAs are driving bookings but profit isn't improving."</div>
+        <div class="battle-pain-item">"We can't trust the numbers until late in the month."</div>
+      </div>
+
+      <div class="battle-talk">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--warn);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:10px;">🧠 Talk Track</div>
+        <div class="battle-talk-step">
+          <span class="battle-talk-label">ACKNOWLEDGE</span>
+          <span class="battle-talk-text">"NetSuite is strong — especially if you want a wide ERP suite."</span>
+        </div>
+        <div class="battle-talk-step">
+          <span class="battle-talk-label">WEDGE</span>
+          <span class="battle-talk-text">"Where Intacct tends to win in hospitality is when finance needs fast multi-property visibility and clean reporting without creating tons of COA accounts or heavy admin overhead."</span>
+        </div>
+        <div class="battle-talk-step">
+          <span class="battle-talk-label">LAND IT</span>
+          <span class="battle-talk-text">"So if your team is spending time consolidating, exporting, or reconciling reporting views… that's exactly what we help clean up."</span>
+        </div>
+      </div>
+
+      <div class="battle-landmine">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--danger);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:10px;">🧨 Landmines — Don't Say These</div>
+        <div class="landmine-row">
+          <div class="landmine-dont">❌ "NetSuite can't do that."</div>
+          <div class="landmine-do">✅ Say: "NetSuite can — it often just takes more configuration."</div>
+        </div>
+        <div class="landmine-row">
+          <div class="landmine-dont">❌ "Sage is always easier."</div>
+          <div class="landmine-do">✅ Say: "Intacct is typically more finance-led and faster to self-serve for accounting teams."</div>
+        </div>
+      </div>
+
+      <div class="battle-cta">
+        <strong>🏁 CLEAN CTA</strong>
+        "If we could show you a property-level P&L with drill-down, plus direct vs OTA margin visibility, and how to reduce spreadsheet consolidation — would it be worth a quick 15 minutes to benchmark your current process?"
+      </div>
+
+      <div class="battle-honest">
+        <div class="battle-honest-title">🧩 When NetSuite Might Be the Better Fit — Be Honest</div>
+        <div class="battle-honest-item">The buyer wants a single platform across many operational functions</div>
+        <div class="battle-honest-item">They need deep customization across departments</div>
+        <div class="battle-honest-item">They have larger internal admin/IT capacity to support ERP complexity</div>
+      </div>
+
+    </div>
+
+<div class="section-block" id="sec-battle-mcleod">
+      <div class="panel-header">
+        <span class="panel-stepnum" style="background:var(--danger-dim);color:var(--danger);">⚔ BATTLE</span>
+        <span class="panel-title">Sage Intacct vs McLeod Accounting</span>
+        <span class="panel-hint">Use when prospect mentions McLeod or "our accounting is tied to our TMS"</span>
+      </div>
+
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:10px 14px;">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:7px;">Use When They Say</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+          <span style="background:var(--danger-dim);border:1px solid var(--danger);color:var(--danger);font-size:10px;padding:3px 9px;border-radius:12px;font-family:var(--mono);">"We use McLeod for accounting"</span>
+          <span style="background:var(--danger-dim);border:1px solid var(--danger);color:var(--danger);font-size:10px;padding:3px 9px;border-radius:12px;font-family:var(--mono);">"Our accounting is tied to our TMS"</span>
+          <span style="background:var(--danger-dim);border:1px solid var(--danger);color:var(--danger);font-size:10px;padding:3px 9px;border-radius:12px;font-family:var(--mono);">"We're in trucking/logistics"</span>
+          <span style="background:var(--danger-dim);border:1px solid var(--danger);color:var(--danger);font-size:10px;padding:3px 9px;border-radius:12px;font-family:var(--mono);">"Cleaner financial reporting across entities"</span>
+        </div>
+      </div>
+
+      <div class="battle-positioning">
+        <strong>⚡ 10-SECOND POSITIONING — SAY THIS</strong>
+        "McLeod is a strong operations/TMS platform for trucking and logistics. Sage Intacct typically wins when finance needs modern multi-entity reporting, faster close, and cleaner accounting controls — while still integrating to the operational systems that dispatch and billing teams rely on."
+      </div>
+
+      <div style="overflow-x:auto;">
+        <table class="battle-table">
+          <thead>
+            <tr>
+              <th style="width:22%">Accounting Area</th>
+              <th style="width:22%">Why It Matters</th>
+              <th class="win" style="width:28%">✅ Sage Intacct</th>
+              <th class="lose" style="width:28%">⚠ McLeod Reality</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="area">Finance-first reporting (entity/dept/location)</td>
+              <td>Leadership needs fast answers without spreadsheet work</td>
+              <td class="win">Dimensional reporting + drill-down built for finance teams</td>
+              <td class="lose">Finance reporting often needs extra work/exporting for executive views</td>
+            </tr>
+            <tr>
+              <td class="area">Multi-entity consolidation</td>
+              <td>Logistics groups may have multiple entities, terminals, or business lines</td>
+              <td class="win">Built for multi-entity consolidation, intercompany, and consolidated reporting</td>
+              <td class="lose">Complex consolidations may become more manual/process-heavy</td>
+            </tr>
+            <tr>
+              <td class="area">Close speed + repeatability</td>
+              <td>Close gets heavier with accruals, allocations, and reconciliations</td>
+              <td class="win">Accounting workflows designed to improve close consistency and control</td>
+              <td class="lose">Teams may rely on legacy processes tied to operational workflows and manual close steps</td>
+            </tr>
+            <tr>
+              <td class="area">Accounting controls + audit trail</td>
+              <td>Controllers need approval discipline and clean auditability</td>
+              <td class="win">Strong role-based controls, approvals, and finance governance</td>
+              <td class="lose">Finance teams may want deeper accounting workflow standardization</td>
+            </tr>
+            <tr>
+              <td class="area">Scalable financial planning/reporting</td>
+              <td>CFO/VP Finance need board-ready reporting as company grows</td>
+              <td class="win">Finance-led structure supports cleaner budget vs actual and scalable reporting</td>
+              <td class="lose">TMS-first systems can be excellent operationally, but finance reporting flexibility may be the gap</td>
+            </tr>
+            <tr>
+              <td class="area">Best-of-breed architecture</td>
+              <td>Ops and finance need different strengths but must stay connected</td>
+              <td class="win">Intacct serves as finance hub while McLeod remains operational system of record</td>
+              <td class="lose">Keeping everything in one system feels simpler, but finance depth/flexibility may be the tradeoff</td>
+            </tr>
+            <tr>
+              <td class="area">Self-service finance agility</td>
+              <td>Controllers need report changes without heavy technical support</td>
+              <td class="win">Finance users can build/drill reports faster</td>
+              <td class="lose">Reporting changes may depend on exports or specialized support knowledge</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:12px 14px;">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--accent2);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:10px;">🧭 McLeod Modernization Attack Plan</div>
+        <div class="battle-talk-step"><span class="battle-talk-label">STEP 1</span><span class="battle-talk-text">"McLeod is great at running trucking operations — dispatch, loads, and day-to-day execution."</span></div>
+        <div class="battle-talk-step"><span class="battle-talk-label">STEP 2</span><span class="battle-talk-text">"The question usually isn't whether McLeod can run operations. It's whether finance has the reporting, controls, and close process they need as complexity grows."</span></div>
+        <div class="battle-talk-step"><span class="battle-talk-label">QUALIFY</span><span class="battle-talk-text">"Are you optimizing for keeping accounting tied to operations, or for giving finance a cleaner, faster reporting and close process while staying integrated?"</span></div>
+        <div class="battle-talk-step"><span class="battle-talk-label">WEDGE</span><span class="battle-talk-text">"What we see often is: logistics teams keep McLeod for operations, but move finance to Intacct when the accounting team needs better visibility and less manual reporting."</span></div>
+      </div>
+
+      <div class="battle-wedge">
+        <div class="battle-wedge-title">🔍 Wedge Questions — Ask 1–2, then stop</div>
+        <div class="battle-wedge-q">"Do you use McLeod accounting mainly because it's convenient with operations — or because finance reporting works well today?"</div>
+        <div class="battle-wedge-q">"How many entities/terminals/business lines are you consolidating?"</div>
+        <div class="battle-wedge-q">"How long does month-end close take — and what's the most manual part?"</div>
+        <div class="battle-wedge-q">"How often does finance export to Excel to build leadership reporting?"</div>
+        <div class="battle-wedge-q">"If leadership asks for margin by terminal/customer/service line mid-month, can finance answer quickly?"</div>
+      </div>
+
+      <div class="battle-pain">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--accent);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:8px;">✅ Good Pain Signals — Listen for These</div>
+        <div class="battle-pain-item">"Operations runs well, but finance reporting is manual."</div>
+        <div class="battle-pain-item">"We export to Excel for board or leadership reporting."</div>
+        <div class="battle-pain-item">"Close takes too long because of reconciliations/allocations."</div>
+        <div class="battle-pain-item">"Consolidated reporting across entities is painful."</div>
+        <div class="battle-pain-item">"Finance can't drill into results fast enough."</div>
+        <div class="battle-pain-item">"McLeod is great for ops, but accounting is getting stretched."</div>
+      </div>
+
+      <div class="battle-talk">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--warn);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:10px;">🧠 Talk Track</div>
+        <div class="battle-talk-step"><span class="battle-talk-label">RESPECT</span><span class="battle-talk-text">"McLeod is a strong platform for trucking operations."</span></div>
+        <div class="battle-talk-step"><span class="battle-talk-label">WEDGE</span><span class="battle-talk-text">"Where finance teams start to feel pain is reporting, close, and consolidation — especially as the business adds entities, terminals, or reporting complexity."</span></div>
+        <div class="battle-talk-step"><span class="battle-talk-label">POSITION</span><span class="battle-talk-text">"The best fit can be McLeod for operations + Intacct for finance, if your priority is faster close, cleaner reporting, and stronger accounting controls."</span></div>
+      </div>
+
+      <div class="battle-landmine">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--danger);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:10px;">🧨 Landmines — Don't Say These</div>
+        <div class="landmine-row"><div class="landmine-dont">❌ "McLeod can't do accounting."</div><div class="landmine-do">✅ Say: "McLeod handles accounting for many teams — the question is whether it still fits your finance complexity."</div></div>
+        <div class="landmine-row"><div class="landmine-dont">❌ "You need to replace McLeod."</div><div class="landmine-do">✅ Say: "Many teams keep McLeod for ops and modernize finance separately."</div></div>
+        <div class="landmine-row"><div class="landmine-dont">❌ "One system is always better."</div><div class="landmine-do">✅ Say: "It depends whether you're optimizing for operational continuity or finance agility."</div></div>
+      </div>
+
+      <div class="battle-cta">
+        <strong>🏁 CLEAN CTA</strong>
+        "If we could show you how finance teams keep McLeod for operations while improving close speed, consolidated reporting, and drill-down visibility in Intacct — would it be worth 15 minutes to benchmark your current process?"
+      </div>
+
+      <div class="battle-honest">
+        <div class="battle-honest-title">🧩 When McLeod Might Be the Better Fit — Be Honest</div>
+        <div class="battle-honest-item">Finance reporting and consolidation needs are straightforward today</div>
+        <div class="battle-honest-item">The team strongly prefers keeping ops and accounting in one system</div>
+        <div class="battle-honest-item">Operational continuity outweighs finance modernization as the top priority</div>
+      </div>
+    </div>
+
+<div class="section-block" id="sec-battle-m3">
+      <div class="panel-header">
+        <span class="panel-stepnum" style="background:var(--danger-dim);color:var(--danger);">⚔ BATTLE</span>
+        <span class="panel-title">Sage Intacct vs M3 Accounting</span>
+        <span class="panel-hint">Use when prospect mentions M3 or hotel portfolio consolidation pain</span>
+      </div>
+
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:10px 14px;">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:7px;">Use When They Say</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+          <span style="background:var(--danger-dim);border:1px solid var(--danger);color:var(--danger);font-size:10px;padding:3px 9px;border-radius:12px;font-family:var(--mono);">"We're on M3 / M3 Core"</span>
+          <span style="background:var(--danger-dim);border:1px solid var(--danger);color:var(--danger);font-size:10px;padding:3px 9px;border-radius:12px;font-family:var(--mono);">"Corporate reporting is hard"</span>
+          <span style="background:var(--danger-dim);border:1px solid var(--danger);color:var(--danger);font-size:10px;padding:3px 9px;border-radius:12px;font-family:var(--mono);">"Better consolidation across entities"</span>
+          <span style="background:var(--danger-dim);border:1px solid var(--danger);color:var(--danger);font-size:10px;padding:3px 9px;border-radius:12px;font-family:var(--mono);">"Faster close / less Excel for ownership reporting"</span>
+        </div>
+      </div>
+
+      <div class="battle-positioning">
+        <strong>⚡ 10-SECOND POSITIONING — SAY THIS</strong>
+        "M3 is purpose-built hotel accounting software with strong integrations and daily hotel workflows. Sage Intacct typically wins when an ownership/management group needs finance-led multi-entity consolidation, dimensional reporting across the portfolio, and stronger corporate controls — while still integrating to hotel systems."
+      </div>
+
+      <div style="overflow-x:auto;">
+        <table class="battle-table">
+          <thead>
+            <tr>
+              <th style="width:22%">Accounting Area</th>
+              <th style="width:22%">Why It Matters</th>
+              <th class="win" style="width:28%">✅ Sage Intacct</th>
+              <th class="lose" style="width:28%">⚠ M3 Reality</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="area">Multi-entity + portfolio consolidation</td>
+              <td>Ownership groups need consolidated financials across properties/entities</td>
+              <td class="win">Built for multi-entity setup + consolidation with configurable rules and entity inheritance</td>
+              <td class="lose">Strong for multi-property hotel accounting, but consolidation depth can vary by portfolio needs</td>
+            </tr>
+            <tr>
+              <td class="area">Dimensional reporting (property/dept/concept/region)</td>
+              <td>P&L views without building a massive chart of accounts</td>
+              <td class="win">Slice by location/group/concept/region and drill down fast</td>
+              <td class="lose">Strong hotel-specific views, but finance teams may want broader corporate slice-and-dice flexibility</td>
+            </tr>
+            <tr>
+              <td class="area">Speed to ownership/board-ready reporting</td>
+              <td>Owners want answers mid-month, not after close</td>
+              <td class="win">Finance-led reporting + drill-down reduces spreadsheet packaging</td>
+              <td class="lose">M3 provides daily snapshots and dashboards — strong operationally, but portfolio packaging can require extra work</td>
+            </tr>
+            <tr>
+              <td class="area">Close process + repeatability</td>
+              <td>Portfolio close gets heavy: allocations, intercompany, reconciliations</td>
+              <td class="win">Standardized finance workflows; multi-entity rules reduce manual repeat work</td>
+              <td class="lose">Complexity can grow as entity structures and reporting demands expand</td>
+            </tr>
+            <tr>
+              <td class="area">Controls + audit trail + role separation</td>
+              <td>Mgmt co. vs ownership vs property staff access needs</td>
+              <td class="win">Strong role-based controls across entities/processes (corporate governance)</td>
+              <td class="lose">Controls depend on configuration and how broadly M3 is used across finance functions</td>
+            </tr>
+            <tr>
+              <td class="area">Integration strategy (keep hotel systems)</td>
+              <td>Must keep PMS/night audit/POS/payroll connected</td>
+              <td class="win">Fits "finance hub" model integrating with hotel ecosystem</td>
+              <td class="lose">M3 highlights seamless hotel integrations — strong for ops, but finance hub flexibility varies</td>
+            </tr>
+            <tr>
+              <td class="area">Corporate finance scaling</td>
+              <td>As groups grow, finance needs more entity complexity and governance</td>
+              <td class="win">Multi-entity design supports scaling finance across growing portfolios</td>
+              <td class="lose">M3 excels at hotel ops/accounting workflows — may be exactly right for some groups</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:12px 14px;">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--accent2);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:10px;">🎯 Integration-First Attack Plan</div>
+        <div class="battle-talk-step"><span class="battle-talk-label">VALIDATE</span><span class="battle-talk-text">"M3 is built for hotels — especially daily hotel accounting and PMS/night audit integration."</span></div>
+        <div class="battle-talk-step"><span class="battle-talk-label">SEPARATE</span><span class="battle-talk-text">"For ownership/management groups, the question becomes: can finance consolidate and report across the portfolio fast enough for decisions — without Excel packaging?"</span></div>
+        <div class="battle-talk-step"><span class="battle-talk-label">QUALIFY</span><span class="battle-talk-text">"Are you optimizing for hotel workflow convenience, or for portfolio-level finance speed and visibility for ownership?"</span></div>
+        <div class="battle-talk-step"><span class="battle-talk-label">POSITION</span><span class="battle-talk-text">"Many groups keep M3 for hotel workflow + add Intacct as the finance reporting/consolidation layer."</span></div>
+      </div>
+
+      <div class="battle-wedge">
+        <div class="battle-wedge-title">🔍 Wedge Questions — Ask 1–2, then stop</div>
+        <div class="battle-wedge-q">"How many legal entities and properties are you consolidating — and how manual is that today?"</div>
+        <div class="battle-wedge-q">"Can you produce a portfolio P&L by region/brand/management vs ownership without Excel?"</div>
+        <div class="battle-wedge-q">"How quickly can ownership get answers mid-month — same day, same week, or after close?"</div>
+        <div class="battle-wedge-q">"Are you satisfied with reporting flexibility when leadership asks for a new cut of the data?"</div>
+        <div class="battle-wedge-q">"Do you want to keep M3 as the hotel system and strengthen corporate finance reporting on top?"</div>
+      </div>
+
+      <div class="battle-pain">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--accent);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:8px;">✅ Good Pain Signals — Listen for These</div>
+        <div class="battle-pain-item">"M3 is great for daily hotel numbers, but portfolio reporting is still manual."</div>
+        <div class="battle-pain-item">"We export to Excel to build ownership packages."</div>
+        <div class="battle-pain-item">"Consolidation takes too long across entities."</div>
+        <div class="battle-pain-item">"Every new reporting request becomes a project."</div>
+        <div class="battle-pain-item">"Leadership wants regional/brand views mid-month and we can't get them fast."</div>
+        <div class="battle-pain-item">"We need stronger controls and consistency across properties."</div>
+      </div>
+
+      <div class="battle-talk">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--warn);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:10px;">🧠 Talk Track</div>
+        <div class="battle-talk-step"><span class="battle-talk-label">RESPECT</span><span class="battle-talk-text">"M3 is hospitality-built and strong for daily hotel accounting and integrations."</span></div>
+        <div class="battle-talk-step"><span class="battle-talk-label">WEDGE</span><span class="battle-talk-text">"For ownership groups, the pain often shows up at the portfolio level — consolidation, reporting flexibility, and getting board-ready views fast."</span></div>
+        <div class="battle-talk-step"><span class="battle-talk-label">POSITION</span><span class="battle-talk-text">"If your priority is finance-led multi-entity reporting — property/group/concept/region views with drill-down — Intacct is built for that."</span></div>
+      </div>
+
+      <div class="battle-landmine">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--danger);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:10px;">🧨 Landmines — Don't Say These</div>
+        <div class="landmine-row"><div class="landmine-dont">❌ "M3 can't do reporting."</div><div class="landmine-do">✅ Say: "M3 is strong for hotel workflows — Intacct is typically stronger for portfolio finance consolidation and flexible dimensions."</div></div>
+        <div class="landmine-row"><div class="landmine-dont">❌ "You need to replace M3."</div><div class="landmine-do">✅ Say: "Many groups keep hotel systems in place and modernize finance reporting where needed."</div></div>
+      </div>
+
+      <div class="battle-cta">
+        <strong>🏁 CLEAN CTA</strong>
+        "If we could show you portfolio-level reporting with drill-down — by property, department, concept, and region — and a path to reduce Excel consolidation while staying integrated with hotel systems, would it be worth 15 minutes to benchmark your current process?"
+      </div>
+
+      <div class="battle-honest">
+        <div class="battle-honest-title">🧩 When M3 Might Be the Better Fit — Be Honest</div>
+        <div class="battle-honest-item">The group wants a hospitality-specific platform to standardize hotel back-office workflows</div>
+        <div class="battle-honest-item">PMS/night audit-driven daily accounting is the top priority</div>
+        <div class="battle-honest-item">Portfolio reporting requirements are straightforward and already satisfied in M3</div>
+      </div>
+    </div>
+
+<div class="section-block" id="sec-battle-gp">
+      <div class="panel-header">
+        <span class="panel-stepnum" style="background:var(--danger-dim);color:var(--danger);">⚔ BATTLE</span>
+        <span class="panel-title">Sage Intacct vs Dynamics GP</span>
+        <span class="panel-hint">Use when prospect mentions Great Plains, on-prem, or GP sunset</span>
+      </div>
+
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:10px 14px;">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:7px;">Use When They Say</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+          <span style="background:var(--danger-dim);border:1px solid var(--danger);color:var(--danger);font-size:10px;padding:3px 9px;border-radius:12px;font-family:var(--mono);">"We're on Great Plains / Dynamics GP"</span>
+          <span style="background:var(--danger-dim);border:1px solid var(--danger);color:var(--danger);font-size:10px;padding:3px 9px;border-radius:12px;font-family:var(--mono);">"We're on an older on-prem system"</span>
+          <span style="background:var(--danger-dim);border:1px solid var(--danger);color:var(--danger);font-size:10px;padding:3px 9px;border-radius:12px;font-family:var(--mono);">"Thinking about Business Central"</span>
+          <span style="background:var(--danger-dim);border:1px solid var(--danger);color:var(--danger);font-size:10px;padding:3px 9px;border-radius:12px;font-family:var(--mono);">"Cleaner reporting across entities"</span>
+        </div>
+      </div>
+
+      <div style="background:var(--warn-dim);border:1px solid var(--warn);border-radius:5px;padding:10px 14px;display:flex;gap:10px;align-items:flex-start;">
+        <span style="font-size:16px;flex-shrink:0;">⏳</span>
+        <div>
+          <div style="font-family:var(--mono);font-size:9px;color:var(--warn);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;">GP Sunset Timeline — Use as a calm planning trigger</div>
+          <div style="font-size:11px;color:var(--text-mid);line-height:1.6;">Microsoft has announced: <strong style="color:var(--warn);">End of product support Dec 31, 2029</strong> · <strong style="color:var(--warn);">End of security patches Apr 30, 2031.</strong> Don't fear sell — use this as: "Smart teams plan before they're forced."</div>
+        </div>
+      </div>
+
+      <div class="battle-positioning">
+        <strong>⚡ 10-SECOND POSITIONING — SAY THIS</strong>
+        "Dynamics GP has been a reliable on-prem system for years. Sage Intacct typically wins when finance needs modern, multi-entity reporting, faster close, and real-time visibility — without heavy IT overhead — especially as organizations plan for GP's sunset timeline."
+      </div>
+
+      <div style="overflow-x:auto;">
+        <table class="battle-table">
+          <thead>
+            <tr>
+              <th style="width:22%">Accounting Area</th>
+              <th style="width:22%">Why It Matters</th>
+              <th class="win" style="width:28%">✅ Sage Intacct</th>
+              <th class="lose" style="width:28%">⚠ GP Reality</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="area">Modern finance reporting (property/entity/dept)</td>
+              <td>Hospitality needs fast visibility by property, department, channel</td>
+              <td class="win">Dimensions + drill-down reporting without spreadsheet gymnastics</td>
+              <td class="lose">Reporting often becomes Excel-heavy as questions grow</td>
+            </tr>
+            <tr>
+              <td class="area">Multi-entity consolidation</td>
+              <td>Ownership groups + management entities require clean consolidation</td>
+              <td class="win">Multi-entity consolidation built for finance teams</td>
+              <td class="lose">Possible, but can be harder to scale cleanly across structures</td>
+            </tr>
+            <tr>
+              <td class="area">Close speed + repeatability</td>
+              <td>Close gets heavier with accruals/allocations/intercompany</td>
+              <td class="win">Designed for faster close + consistent processes</td>
+              <td class="lose">Close often depends on manual steps + legacy workflows</td>
+            </tr>
+            <tr>
+              <td class="area">Integrations (PMS/POS/payroll/procurement)</td>
+              <td>Hospitality data lives in multiple systems</td>
+              <td class="win">Best-of-breed finance hub model fits modern stacks</td>
+              <td class="lose">Integrations can be older/fragile or require more technical effort</td>
+            </tr>
+            <tr>
+              <td class="area">Cloud agility + lower IT overhead</td>
+              <td>Teams want quicker changes and fewer upgrades/servers</td>
+              <td class="win">Cloud-native finance platform</td>
+              <td class="lose">GP is typically on-prem and more maintenance-heavy</td>
+            </tr>
+            <tr>
+              <td class="area">Future-proofing + risk reduction</td>
+              <td>Roadmap matters for support, updates, and security</td>
+              <td class="win">Modern platform investment aligned to cloud finance</td>
+              <td class="lose">Product support ends Dec 31, 2029 · Security patches end Apr 30, 2031</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:12px 14px;">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--accent2);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:10px;">🎯 Attack Plan — Position Intacct vs the Microsoft push to BC</div>
+        <div class="battle-talk-step"><span class="battle-talk-label">TRIGGER</span><span class="battle-talk-text">"Totally understand staying on GP — it's stable. The only reason it's coming up more now is Microsoft has published the support runway through 2029/2031, so teams are mapping what their next platform should be."</span></div>
+        <div class="battle-talk-step"><span class="battle-talk-label">PATH A</span><span class="battle-talk-text">"Stay Microsoft and move to Business Central — Microsoft provides a migration path and tooling."</span></div>
+        <div class="battle-talk-step"><span class="battle-talk-label">PATH B</span><span class="battle-talk-text">"Choose a finance-first platform built for accounting agility: faster close, cleaner reporting, multi-entity visibility, easier drill-down."</span></div>
+        <div class="battle-talk-step"><span class="battle-talk-label">QUALIFY</span><span class="battle-talk-text">"Are you optimizing for staying in Microsoft's ecosystem, or for the fastest, cleanest finance operation regardless of vendor?"</span></div>
+      </div>
+
+      <div class="battle-wedge">
+        <div class="battle-wedge-title">🔍 Wedge Questions — Ask 1–2, then stop</div>
+        <div class="battle-wedge-q">"How many entities/properties are you consolidating today?"</div>
+        <div class="battle-wedge-q">"How long does month-end close take — and what's the most manual part?"</div>
+        <div class="battle-wedge-q">"How often do you export to Excel to get property-level reporting?"</div>
+        <div class="battle-wedge-q">"When leadership asks a question mid-month, can finance answer it quickly?"</div>
+        <div class="battle-wedge-q">"Is your goal to modernize finance workflows — or mainly to replace GP because of roadmap?"</div>
+      </div>
+
+      <div class="battle-pain">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--accent);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:8px;">✅ Good Pain Signals — Listen for These</div>
+        <div class="battle-pain-item">"We rely on Excel for reporting."</div>
+        <div class="battle-pain-item">"It takes too long to close."</div>
+        <div class="battle-pain-item">"Reporting by property/department takes effort."</div>
+        <div class="battle-pain-item">"Integrations feel brittle or require too much IT."</div>
+        <div class="battle-pain-item">"We don't have real-time visibility."</div>
+        <div class="battle-pain-item">"We know we need to modernize before the deadline hits."</div>
+      </div>
+
+      <div class="battle-talk">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--warn);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:10px;">🧠 Talk Track</div>
+        <div class="battle-talk-step"><span class="battle-talk-label">RESPECT</span><span class="battle-talk-text">"GP has been a dependable system for a long time."</span></div>
+        <div class="battle-talk-step"><span class="battle-talk-label">WEDGE</span><span class="battle-talk-text">"Now that Microsoft has announced the support runway (2029/2031), teams are evaluating what's next."</span></div>
+        <div class="battle-talk-step"><span class="battle-talk-label">POSITION</span><span class="battle-talk-text">"If your priority is finance-led reporting, multi-entity visibility, and a faster close with less manual work, Intacct is built for that."</span></div>
+      </div>
+
+      <div class="battle-landmine">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--danger);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:10px;">🧨 Landmines — Don't Say These</div>
+        <div class="landmine-row"><div class="landmine-dont">❌ "GP is dead tomorrow."</div><div class="landmine-do">✅ Say: "There's a runway, but smart teams plan before they're forced."</div></div>
+        <div class="landmine-row"><div class="landmine-dont">❌ "Business Central can't work."</div><div class="landmine-do">✅ Say: "BC may be the best fit if staying in Microsoft matters most."</div></div>
+      </div>
+
+      <div class="battle-cta">
+        <strong>🏁 CLEAN CTA</strong>
+        "If we could show you property-level reporting with drill-down, plus how finance teams reduce spreadsheet consolidation and speed up close during modernization — would it be worth 15 minutes to benchmark what your next-stage finance stack could look like?"
+      </div>
+
+      <div class="battle-honest">
+        <div class="battle-honest-title">🧩 When GP / Business Central Might Be the Better Fit — Be Honest</div>
+        <div class="battle-honest-item">Staying in the Microsoft ecosystem is a firm organizational requirement</div>
+        <div class="battle-honest-item">They want a broad ERP suite across many operational functions, not just finance</div>
+        <div class="battle-honest-item">Internal IT has strong Microsoft expertise and prefers supporting a familiar stack</div>
+      </div>
+    </div>
+
+  <footer>
+    <span>SAGE INTACCT · BDR BATTLE CARDS</span>
+    <span>RESPECT THE SYSTEM · QUESTION THE WORKAROUNDS · OPEN THE DOOR</span>
+  </footer>
+</div>
+</body>
+</html>
