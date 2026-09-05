@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZoomInfo Saved Search Playbook — BDR Training</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f0f0f0; --surface:#ffffff; --surface2:#eaf4f1; --surface3:#d8ede8;
+    --border:#b8d9d0; --border-bright:#3DA688;
+    --accent:#2A6B5A; --accent2:#3DA688; --accent3:#5CC98A;
+    --accent-dim:#2A6B5A18; --accent2-dim:#3DA68820;
+    --warn:#c97a00; --warn-dim:#c97a0018; --danger:#cc3333; --danger-dim:#cc333315;
+    --zi:#4a3aff; --zi-dim:#4a3aff12;
+    --text:#1a2e28; --text-mid:#2A6B5A; --text-dim:#6b9e90;
+    --mono:'IBM Plex Mono',monospace; --sans:'DM Sans',sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;line-height:1.55;}
+  .topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:20;flex-wrap:wrap;}
+  .logo{font-family:var(--mono);font-weight:600;font-size:13px;letter-spacing:.06em;color:var(--accent);}
+  .logo span{color:var(--text-dim);font-weight:400;}
+  .tabs{display:flex;gap:6px;margin-left:auto;}
+  .tab{font-size:12px;font-weight:600;color:var(--text-mid);text-decoration:none;padding:7px 13px;border-radius:6px;border:1px solid transparent;}
+  .tab:hover{background:var(--surface2);}
+  .tab.active{background:var(--accent2-dim);border-color:var(--border);color:var(--accent);}
+  .page{max-width:920px;margin:0 auto;padding:34px 20px 70px;}
+  .eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent2);margin-bottom:8px;}
+  h1{font-size:32px;font-weight:700;letter-spacing:-.02em;line-height:1.1;}
+  .subtitle{margin-top:8px;color:var(--text-mid);font-size:14px;max-width:680px;}
+  .philosophy{margin-top:16px;background:var(--accent-dim);border:1px solid var(--accent2);border-radius:8px;padding:12px 16px;font-size:13px;}
+  .philosophy b{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:4px;}
+
+  h2.sec{font-size:19px;font-weight:700;margin:36px 0 4px;}
+  .sec-sub{font-size:13px;color:var(--text-mid);margin-bottom:14px;max-width:680px;}
+
+  /* stack diagram */
+  .stack{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px;}
+  .stack-item{background:var(--surface);border:1px solid var(--border);border-top:3px solid var(--accent2);border-radius:8px;padding:12px;}
+  .stack-item b{font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:var(--accent);display:block;margin-bottom:4px;}
+  .stack-item p{font-size:11.5px;color:var(--text-mid);}
+  .stack-item.d{border-top-color:var(--warn);}
+
+  /* steps */
+  .step{display:grid;grid-template-columns:36px 1fr;gap:14px;margin-top:14px;}
+  .step-num{width:32px;height:32px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;}
+  .step-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:13px 16px;}
+  .step-card h3{font-size:14.5px;font-weight:700;margin-bottom:4px;}
+  .step-card h3 .ui{font-family:var(--mono);font-size:10px;letter-spacing:.04em;background:var(--zi-dim);color:var(--zi);border:1px solid #c8c2ff;border-radius:4px;padding:2px 7px;margin-left:6px;vertical-align:1px;}
+  .step-card p{font-size:12.5px;color:var(--text-mid);}
+  .step-card .why{margin-top:6px;font-size:11.5px;color:var(--text-dim);font-style:italic;}
+
+  /* lane tabs */
+  .grouptabs{display:flex;gap:8px;margin:14px 0 12px;}
+  .grouptab{font-size:12.5px;font-weight:700;cursor:pointer;border-radius:18px;padding:8px 16px;border:1px solid var(--border);background:var(--surface);color:var(--text-mid);}
+  .grouptab.active{background:var(--accent2-dim);border-color:var(--accent2);color:var(--accent);}
+  .lane{background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:8px;overflow:hidden;}
+  .lane.hidden{display:none;}
+  .lane-head{display:flex;align-items:center;gap:12px;padding:13px 16px;cursor:pointer;}
+  .lane-head:hover{background:var(--surface2);}
+  .lane-code{font-family:var(--mono);font-size:10px;font-weight:600;color:var(--accent);background:var(--accent-dim);border-radius:4px;padding:3px 8px;}
+  .lane-title{font-size:14px;font-weight:700;flex:1;}
+  .chev{font-size:9px;color:var(--text-dim);transition:transform .15s;}
+  .lane.open .chev{transform:rotate(90deg);}
+  .lane-body{display:none;padding:4px 16px 16px;border-top:1px dashed var(--border);}
+  .lane.open .lane-body{display:block;}
+  .lane-desc{font-size:12.5px;color:var(--text-mid);padding:10px 0 4px;}
+  .sizenote{font-size:12px;color:var(--text-mid);background:var(--surface2);border-radius:6px;padding:9px 12px;margin:8px 0;}
+  .sizenote b{font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;color:var(--accent);}
+  .combo{font-size:12px;background:var(--warn-dim);border:1px solid var(--warn);border-radius:6px;padding:9px 12px;margin:8px 0;color:var(--text);}
+
+  .copyblock{background:var(--surface2);border:1px solid var(--border);border-radius:6px;margin:8px 0;overflow:hidden;}
+  .copyblock-head{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;border-bottom:1px dashed var(--border);}
+  .copyblock-head span{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);}
+  .copybtn{font-family:var(--mono);font-size:10px;font-weight:600;cursor:pointer;border-radius:12px;padding:4px 12px;border:1px solid var(--accent2);background:var(--surface);color:var(--accent);}
+  .copybtn:hover{background:var(--accent2);color:#fff;}
+  .copybtn.done{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .copytext{font-family:var(--mono);font-size:11.5px;line-height:1.7;padding:10px 12px;white-space:pre-wrap;color:var(--text);}
+  .copyblock.small .copytext{font-size:10.5px;max-height:150px;overflow-y:auto;}
+
+  /* tiers table */
+  table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:10px;background:var(--surface);}
+  th{background:var(--accent);color:#fff;text-align:left;padding:8px 12px;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;}
+  td{border:1px solid var(--border);padding:9px 12px;vertical-align:top;}
+  td:first-child{font-weight:700;white-space:nowrap;}
+
+  .bestpractice{margin-top:14px;background:var(--danger-dim);border:1px solid var(--danger);border-radius:8px;padding:12px 16px;font-size:13px;}
+  .bestpractice b{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--danger);display:block;margin-bottom:4px;}
+  .standard{margin-top:26px;background:var(--text);color:#fff;border-radius:8px;padding:14px 18px;font-family:var(--mono);font-size:11.5px;letter-spacing:.04em;text-align:center;}
+  footer{margin-top:44px;padding-top:14px;border-top:1px solid var(--border);font-family:var(--mono);font-size:10px;color:var(--text-dim);display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;}
+  @media(max-width:720px){.stack{grid-template-columns:1fr 1fr;}h1{font-size:26px;}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="logo">SAGE INTACCT <span>· BDR TRAINING</span></span>
+  <div class="tabs">
+    <a class="tab" href="./console.html">📞 Call Console</a>
+    <a class="tab" href="./training.html">📚 Training Hub</a>
+    <a class="tab active" href="./zoominfo.html">🎯 ZoomInfo Playbook</a>
+  </div>
+</div>
+
+<div class="page">
+  <div class="eyebrow">BDR Prospecting · Feed the Belt</div>
+  <h1>ZoomInfo Saved Search Playbook</h1>
+  <p class="subtitle">Step-by-step setup for Advanced Search: the exact filters, the exact values, and the copy-paste blocks for all 12 ICP lanes. These searches target the accounts that look like the ones we've already won.</p>
+  <div class="philosophy">
+    <b>Search Philosophy</b>
+    NAICS identifies the business type. ICP layers identify the accounts worth a BDR's time. Prioritize operating complexity — multiple locations, entities, plants, branches, terminals, facilities, projects, or states — then add a timely growth or finance trigger. Technology is a prioritization layer, never a hard gate.
+  </div>
+
+  <h2 class="sec">The System — 4 Saved Searches Per Lane + 1 Contact Search</h2>
+  <p class="sec-sub">Build A once, then clone it three times. Name them exactly like this so the whole team's searches match: <b>"GB-01 Trucking — A Base"</b>, <b>"— B +Legacy Finance"</b>, <b>"— C Growth Scoops"</b>, <b>"— D Finance & Reorg Scoops"</b>, <b>"— Contacts Finance"</b>.</p>
+  <div class="stack">
+    <div class="stack-item"><b>A · BASE ICP</b><p>NAICS + size + territory + keywords. Your account universe.</p></div>
+    <div class="stack-item"><b>B · +LEGACY FINANCE</b><p>Clone A, add legacy finance tech. Maturity-gap accounts.</p></div>
+    <div class="stack-item d"><b>C · GROWTH SCOOPS</b><p>Clone A, add expansion/opening/new-market Scoops. The business is outgrowing its stack.</p></div>
+    <div class="stack-item d"><b>D · FINANCE & REORG SCOOPS</b><p>Clone A, add M&A, PE, new-CFO and system-change Scoops. Act-now triggers.</p></div>
+  </div>
+
+  <h2 class="sec">Step-by-Step — Build Search A (Base ICP)</h2>
+  <p class="sec-sub">Open ZoomInfo → Advanced Search. The filter names below match the left-hand panel exactly. Pick your lane in the next section first so you have the blocks ready to paste.</p>
+
+  <div class="step"><div class="step-num">1</div><div class="step-card">
+    <h3>Open the Companies panel <span class="ui">Companies</span></h3>
+    <p>Advanced Search builds from the left filter rail. You'll work top to bottom through the <b>Companies</b> group first — account filters before people filters, always.</p>
+  </div></div>
+
+  <div class="step"><div class="step-num">2</div><div class="step-card">
+    <h3>Set the industry by NAICS <span class="ui">Companies → Industry</span></h3>
+    <p>Click <b>Industry</b>, switch to the <b>NAICS Codes</b> input, and paste your lane's NAICS block (copy button below). Paste the whole comma-separated block at once — ZoomInfo parses it.</p>
+    <p class="why">NAICS defines the universe. Everything after this step narrows it to accounts worth your time.</p>
+  </div></div>
+
+  <div class="step"><div class="step-num">3</div><div class="step-card">
+    <h3>Set company size <span class="ui">Companies → Employee Count</span></h3>
+    <p>Enter your lane's employee range as a starting point (most lanes: 50–1,500; restaurants 100–5,000). Treat it soft — widen it when the lane guidance says complexity beats headcount.</p>
+  </div></div>
+
+  <div class="step"><div class="step-num">4</div><div class="step-card">
+    <h3>Territory + HQ only <span class="ui">Companies → Location + Corporate Hierarchy</span></h3>
+    <p>Set your territory in the location filter. Then open <b>Corporate Hierarchy</b> and select headquarters / parent-level records only.</p>
+    <p class="why">This kills duplicate branch records — you want the parent operating company where finance decisions live, not 40 individual locations of the same brand.</p>
+  </div></div>
+
+  <div class="step"><div class="step-num">5</div><div class="step-card">
+    <h3>Tighten with keywords <span class="ui">Companies → Company Keywords</span></h3>
+    <p>Paste your lane's keyword string (with the OR operators and quotes intact). Critical for broad NAICS families — especially hospitality, where the codes alone are too wide.</p>
+  </div></div>
+
+  <div class="step"><div class="step-num">6</div><div class="step-card">
+    <h3>Optional revenue soft gate <span class="ui">Companies → Company Revenue</span></h3>
+    <p>~$10M–$500M for General Business, ~$20M–$500M for Hospitality. <b>Soft</b> means: never remove an account solely for being outside the band when complexity is strong.</p>
+  </div></div>
+
+  <div class="step"><div class="step-num">7</div><div class="step-card">
+    <h3>Save it as Search A <span class="ui">Save Search</span></h3>
+    <p>Save with the team naming convention: <b>"[Lane] — A Base"</b>. Set the alert to weekly so new matching accounts land in your inbox.</p>
+  </div></div>
+
+  <h2 class="sec">Clone Into B, C, and D</h2>
+
+  <div class="step"><div class="step-num">B</div><div class="step-card">
+    <h3>Search B — Legacy Finance Stack <span class="ui">Sales Signals → Technologies</span></h3>
+    <p>Open Search A → Save As <b>"— B +Legacy Finance"</b>. In <b>Sales Signals → Technologies</b>, add your lane's legacy-finance list (QuickBooks, Dynamics GP, etc.). Weekly alert.</p>
+    <p class="why">These are the accounts most like the ones we've already won: a growing, complex business still running an SMB finance stack. A missing technographic record never disqualifies — it just doesn't boost.</p>
+  </div></div>
+
+  <div class="step"><div class="step-num">C</div><div class="step-card">
+    <h3>Search C — Growth Scoops <span class="ui">Sales Signals → Scoops</span></h3>
+    <p>Clone A → <b>"— C Growth Scoops"</b>. Open <b>Scoops</b>, set the date range to a rolling ~6 months (like the pinned example), and select your lane's <b>growth topics</b>: expansions, openings, new locations/markets, development agreements.</p>
+    <p class="why">Growth scoops mean the business is getting more complex — new entities, locations, and consolidation pain arriving on a schedule. These accounts are outgrowing their stack in real time. Weekly alert works; the window stays relevant for months.</p>
+  </div></div>
+
+  <div class="step"><div class="step-num">D</div><div class="step-card">
+    <h3>Search D — Finance & Reorg Scoops <span class="ui">Sales Signals → Scoops</span></h3>
+    <p>Clone A → <b>"— D Finance & Reorg Scoops"</b>. Same Scoops filter, same date range — but select the <b>finance and reorganization topics</b>: acquisition, merger, private equity, new CFO / Controller, finance hiring, ERP or system change.</p>
+    <p class="why">These are the act-now triggers: a new finance leader reevaluates everything in their first 90 days, and M&A forces a systems conversation. Set this alert to <b>daily</b> — these age fastest. New CFO at an account that's also in Search B or C is the best call on your list.</p>
+  </div></div>
+
+  <div class="step"><div class="step-num">👤</div><div class="step-card">
+    <h3>The matching Contact search <span class="ui">Contacts → Job Title & Role</span></h3>
+    <p>With your saved account search applied, switch to the <b>Contacts</b> panel. In <b>Job Title & Role</b>, paste the finance titles block below. Pin <b>Likely to Engage</b> to sort for warm contacts. Save as <b>"[Lane] — Contacts Finance"</b>.</p>
+    <p class="why">Prioritize new-to-role finance leaders at triggered accounts — new CFO + recent scoop is the best call on your list.</p>
+  </div></div>
+
+  <div class="copyblock small">
+          <div class="copyblock-head"><span>CONTACTS → JOB TITLE & ROLE — PASTE THESE TITLES</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">CFO
+Chief Financial Officer
+Chief Accounting Officer
+VP Finance
+Vice President Finance
+VP Accounting
+Controller
+Corporate Controller
+Director of Finance
+Director of Accounting
+Assistant Controller
+Accounting Manager
+FP&amp;A Director
+FP&amp;A Manager
+Financial Systems</div>
+        </div>
+  <div class="copyblock small">
+          <div class="copyblock-head"><span>UNIVERSAL LEGACY-FINANCE TECHNOLOGY LIST (SEARCH B DEFAULT)</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">QuickBooks Desktop
+QuickBooks Enterprise
+QuickBooks Online
+Microsoft Dynamics GP</div>
+        </div>
+
+  <h2 class="sec">Pick Your Lane — All 12 ICP Searches</h2>
+  <p class="sec-sub">Each lane has every paste-ready block for searches A–D. Open your lane, keep it open while you build.</p>
+  <div class="grouptabs">
+    <div class="grouptab active" data-g="gb" onclick="setGroup('gb',this)">🏭 General Business (6)</div>
+    <div class="grouptab" data-g="hosp" onclick="setGroup('hosp',this)">🏨 Hospitality (6)</div>
+  </div>
+
+    <div class="lane" data-group="gb" id="lane-GB-01">
+      <div class="lane-head" onclick="this.parentElement.classList.toggle('open')">
+        <span class="lane-code">GB-01</span>
+        <span class="lane-title">Trucking &amp; Logistics</span>
+        <span class="chev">▶</span>
+      </div>
+      <div class="lane-body">
+        <p class="lane-desc">Asset-based trucking/carriers, moving &amp; storage, freight brokerage/3PL, and warehousing operators.</p>
+        <div class="copyblock">
+          <div class="copyblock-head"><span>STEP 2 · INDUSTRY → NAICS CODES — PASTE THIS</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">484110, 484121, 484122, 484210, 484220, 484230, 488510, 493110, 493120</div>
+        </div>
+        <div class="sizenote"><b>STEP 3 · EMPLOYEE COUNT:</b> 50--1,500 starting point; widen to 25+ for multi-location movers, warehousing or 3PLs.</div>
+        <div class="copyblock">
+          <div class="copyblock-head"><span>STEP 5 · COMPANY KEYWORDS — PASTE THIS</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">trucking OR carrier OR freight OR &quot;moving and storage&quot; OR relocation OR &quot;freight brokerage&quot; OR 3PL OR warehouse OR warehousing</div>
+        </div>
+        <div class="copyblock small">
+          <div class="copyblock-head"><span>SEARCH B · SALES SIGNALS → TECHNOLOGIES — ADD THESE</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">QuickBooks Desktop
+QuickBooks Enterprise
+Microsoft Dynamics GP
+Microsoft Dynamics Business Central
+NetSuite</div>
+        </div>
+        <div class="combo">🔥 <b>Account-profile tip:</b> when you see this pairing on an account, move it to the top of the list — Transportation ICP + McLeod or TMW + QuickBooks / Dynamics GP</div>
+        <div class="copyblock small">
+          <div class="copyblock-head"><span>SEARCH C · SCOOPS → GROWTH — SELECT THESE TOPICS</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">New terminal, New warehouse, Fleet expansion, Geographic expansion, New market</div>
+        </div>
+        <div class="copyblock small">
+          <div class="copyblock-head"><span>SEARCH D · SCOOPS → FINANCE & REORG — SELECT THESE TOPICS</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">Acquisition, Merger, New CFO, New Controller, Finance hiring, ERP implementation, System implementation, Technology investment</div>
+        </div>
+      </div>
+    </div>
+    <div class="lane" data-group="gb" id="lane-GB-02">
+      <div class="lane-head" onclick="this.parentElement.classList.toggle('open')">
+        <span class="lane-code">GB-02</span>
+        <span class="lane-title">Industrial Manufacturing</span>
+        <span class="chev">▶</span>
+      </div>
+      <div class="lane-body">
+        <p class="lane-desc">Paper/packaging, chemicals, plastics, concrete/materials, fabricated metal, machinery, electronics, transportation equipment and specialty manufacturers.</p>
+        <div class="copyblock">
+          <div class="copyblock-head"><span>STEP 2 · INDUSTRY → NAICS CODES — PASTE THIS</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">322, 325, 326, 327, 332, 333, 334, 336, 339</div>
+        </div>
+        <div class="sizenote"><b>STEP 3 · EMPLOYEE COUNT:</b> 50--1,500 starting point; prioritize companies with multiple operating sites over simple employee size.</div>
+        <div class="copyblock">
+          <div class="copyblock-head"><span>STEP 5 · COMPANY KEYWORDS — PASTE THIS</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">manufacturer OR manufacturing OR plant OR fabrication OR machinery OR equipment OR plastics OR chemical OR packaging OR concrete OR industrial</div>
+        </div>
+        <div class="copyblock small">
+          <div class="copyblock-head"><span>SEARCH B · SALES SIGNALS → TECHNOLOGIES — ADD THESE</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">QuickBooks Enterprise
+Microsoft Dynamics GP
+Microsoft Dynamics Business Central
+Epicor
+Epicor Kinetic
+Infor
+Infor CloudSuite Industrial
+Plex
+Acumatica
+NetSuite
+SAP Business One</div>
+        </div>
+        <div class="combo">🔥 <b>Account-profile tip:</b> when you see this pairing on an account, move it to the top of the list — Fishbowl / MES / MRP + QuickBooks Enterprise OR multiple plants + Dynamics GP</div>
+        <div class="copyblock small">
+          <div class="copyblock-head"><span>SEARCH C · SCOOPS → GROWTH — SELECT THESE TOPICS</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">New plant, Plant expansion, New warehouse, New facility, Capacity expansion, New product line, International expansion</div>
+        </div>
+        <div class="copyblock small">
+          <div class="copyblock-head"><span>SEARCH D · SCOOPS → FINANCE & REORG — SELECT THESE TOPICS</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">Acquisition, Private equity investment, New CFO, New Controller, ERP implementation, Digital transformation</div>
+        </div>
+      </div>
+    </div>
+    <div class="lane" data-group="gb" id="lane-GB-03">
+      <div class="lane-head" onclick="this.parentElement.classList.toggle('open')">
+        <span class="lane-code">GB-03</span>
+        <span class="lane-title">Industrial / Field Services</span>
+        <span class="chev">▶</span>
+      </div>
+      <div class="lane-body">
+        <p class="lane-desc">Specialty contractors, engineering firms, industrial equipment repair/service, and heavy-equipment rental businesses.</p>
+        <div class="copyblock">
+          <div class="copyblock-head"><span>STEP 2 · INDUSTRY → NAICS CODES — PASTE THIS</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">238, 541330, 811310, 532412</div>
+        </div>
+        <div class="sizenote"><b>STEP 3 · EMPLOYEE COUNT:</b> 25--1,500; size is secondary to branch count, field workforce, project load and equipment footprint.</div>
+        <div class="copyblock">
+          <div class="copyblock-head"><span>STEP 5 · COMPANY KEYWORDS — PASTE THIS</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">&quot;field service&quot; OR mechanical OR HVAC OR plumbing OR electrical OR &quot;industrial service&quot; OR engineering OR &quot;equipment repair&quot; OR &quot;equipment rental&quot;</div>
+        </div>
+        <div class="copyblock small">
+          <div class="copyblock-head"><span>SEARCH B · SALES SIGNALS → TECHNOLOGIES — ADD THESE</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">QuickBooks Desktop
+QuickBooks Enterprise
+Microsoft Dynamics GP
+Viewpoint Vista
+Viewpoint Spectrum
+Foundation Software
+Jonas
+Acumatica</div>
+        </div>
+        <div class="combo">🔥 <b>Account-profile tip:</b> when you see this pairing on an account, move it to the top of the list — ServiceTitan + QuickBooks Desktop / QuickBooks Enterprise + 100+ employees</div>
+        <div class="copyblock small">
+          <div class="copyblock-head"><span>SEARCH C · SCOOPS → GROWTH — SELECT THESE TOPICS</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">New branch, New service territory, Fleet expansion, New geographic market</div>
+        </div>
+        <div class="copyblock small">
+          <div class="copyblock-head"><span>SEARCH D · SCOOPS → FINANCE & REORG — SELECT THESE TOPICS</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">Acquisition, New CFO, New Controller, Accounting hiring, ERP implementation, Software implementation, Private equity investment</div>
+        </div>
+      </div>
+    </div>
+    <div class="lane" data-group="gb" id="lane-GB-04">
+      <div class="lane-head" onclick="this.parentElement.classList.toggle('open')">
+        <span class="lane-code">GB-04</span>
+        <span class="lane-title">Multi-Location Services</span>
+        <span class="chev">▶</span>
+      </div>
+      <div class="lane-body">
+        <p class="lane-desc">Automotive, repair, rental, security, cleaning, landscaping, staffing, personal care, specialty retail and other repeatable branch/location models.</p>
+        <div class="copyblock">
+          <div class="copyblock-head"><span>STEP 2 · INDUSTRY → NAICS CODES — PASTE THIS</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">441, 8111, 532, 5616, 561720, 561730, 5613, 8121, 44, 45, 811</div>
+        </div>
+        <div class="sizenote"><b>STEP 3 · EMPLOYEE COUNT:</b> 100--2,000 preferred; widen lower when the company clearly operates 5+ locations or branches.</div>
+        <div class="copyblock">
+          <div class="copyblock-head"><span>STEP 5 · COMPANY KEYWORDS — PASTE THIS</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">locations OR branches OR dealerships OR stores OR &quot;service centers&quot; OR regional OR multi-location OR franchise</div>
+        </div>
+        <div class="copyblock small">
+          <div class="copyblock-head"><span>SEARCH B · SALES SIGNALS → TECHNOLOGIES — ADD THESE</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">QuickBooks Enterprise
+QuickBooks Desktop
+Dynamics GP
+Business Central
+NetSuite</div>
+        </div>
+        <div class="combo">🔥 <b>Account-profile tip:</b> when you see this pairing on an account, move it to the top of the list — 15+ branches / locations + specialized operating platform + QuickBooks Enterprise / Dynamics GP</div>
+        <div class="copyblock small">
+          <div class="copyblock-head"><span>SEARCH C · SCOOPS → GROWTH — SELECT THESE TOPICS</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">New locations, Branch expansion, Franchise expansion, New market</div>
+        </div>
+        <div class="copyblock small">
+          <div class="copyblock-head"><span>SEARCH D · SCOOPS → FINANCE & REORG — SELECT THESE TOPICS</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">Acquisition, Private equity, New CFO, New Controller, Finance hiring, Shared services, Centralization, Technology implementation</div>
+        </div>
+      </div>
+    </div>
+    <div class="lane" data-group="gb" id="lane-GB-05">
+      <div class="lane-head" onclick="this.parentElement.classList.toggle('open')">
+        <span class="lane-code">GB-05</span>
+        <span class="lane-title">Energy / Oilfield</span>
+        <span class="chev">▶</span>
+      </div>
+      <div class="lane-body">
+        <p class="lane-desc">Oil &amp; gas, oilfield services, utilities/power, renewable generation and utility/infrastructure construction.</p>
+        <div class="copyblock">
+          <div class="copyblock-head"><span>STEP 2 · INDUSTRY → NAICS CODES — PASTE THIS</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">211, 213, 221, 221114, 221115, 237</div>
+        </div>
+        <div class="sizenote"><b>STEP 3 · EMPLOYEE COUNT:</b> 50--1,500 starting point; prioritize project, asset and entity complexity over pure headcount.</div>
+        <div class="copyblock">
+          <div class="copyblock-head"><span>STEP 5 · COMPANY KEYWORDS — PASTE THIS</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">oilfield OR energy OR utility OR power OR solar OR wind OR pipeline OR infrastructure OR &quot;field operations&quot;</div>
+        </div>
+        <div class="copyblock small">
+          <div class="copyblock-head"><span>SEARCH B · SALES SIGNALS → TECHNOLOGIES — ADD THESE</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">QuickBooks Enterprise
+Dynamics GP
+Dynamics Business Central
+NetSuite
+SAP
+Oracle</div>
+        </div>
+        <div class="combo">🔥 <b>Account-profile tip:</b> when you see this pairing on an account, move it to the top of the list — Oilfield / production system + QuickBooks, especially with multiple operating entities or projects</div>
+        <div class="copyblock small">
+          <div class="copyblock-head"><span>SEARCH C · SCOOPS → GROWTH — SELECT THESE TOPICS</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">New wells, New basin, New project, Capital project, New geographic region</div>
+        </div>
+        <div class="copyblock small">
+          <div class="copyblock-head"><span>SEARCH D · SCOOPS → FINANCE & REORG — SELECT THESE TOPICS</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">Asset acquisition, Acquisition, Divestiture, Joint venture, Private equity investment, New CFO, New Controller, Finance transformation, ERP implementation</div>
+        </div>
+      </div>
+    </div>
+    <div class="lane" data-group="gb" id="lane-GB-06">
+      <div class="lane-head" onclick="this.parentElement.classList.toggle('open')">
+        <span class="lane-code">GB-06</span>
+        <span class="lane-title">Waste / Environmental</span>
+        <span class="chev">▶</span>
+      </div>
+      <div class="lane-body">
+        <p class="lane-desc">Waste collection, treatment/disposal, remediation, recycling and environmental operating companies.</p>
+        <div class="copyblock">
+          <div class="copyblock-head"><span>STEP 2 · INDUSTRY → NAICS CODES — PASTE THIS</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">562, 5621, 5622, 5629</div>
+        </div>
+        <div class="sizenote"><b>STEP 3 · EMPLOYEE COUNT:</b> 50--1,500 starting point; widen lower for clearly multi-site regional operators.</div>
+        <div class="copyblock">
+          <div class="copyblock-head"><span>STEP 5 · COMPANY KEYWORDS — PASTE THIS</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">waste OR recycling OR remediation OR environmental OR landfill OR &quot;transfer station&quot; OR hauling OR disposal</div>
+        </div>
+        <div class="copyblock small">
+          <div class="copyblock-head"><span>SEARCH B · SALES SIGNALS → TECHNOLOGIES — ADD THESE</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">QuickBooks Enterprise
+Microsoft Dynamics GP
+Microsoft Business Central
+NetSuite</div>
+        </div>
+        <div class="combo">🔥 <b>Account-profile tip:</b> when you see this pairing on an account, move it to the top of the list — Routeware / AMCS / fleet tech + QuickBooks Enterprise or legacy Dynamics GP</div>
+        <div class="copyblock small">
+          <div class="copyblock-head"><span>SEARCH C · SCOOPS → GROWTH — SELECT THESE TOPICS</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">New municipality contract, New facility, New transfer station, Fleet expansion, Geographic expansion, Recycling facility expansion</div>
+        </div>
+        <div class="copyblock small">
+          <div class="copyblock-head"><span>SEARCH D · SCOOPS → FINANCE & REORG — SELECT THESE TOPICS</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">Acquisition, Route acquisition, New CFO, New Controller, Private equity, ERP implementation</div>
+        </div>
+      </div>
+    </div>
+    <div class="lane" data-group="hosp" id="lane-HOSP-01">
+      <div class="lane-head" onclick="this.parentElement.classList.toggle('open')">
+        <span class="lane-code">HOSP-01</span>
+        <span class="lane-title">Hotel Management Companies</span>
+        <span class="chev">▶</span>
+      </div>
+      <div class="lane-body">
+        <p class="lane-desc">Third-party hotel management companies and operators providing centralized management across multiple properties.</p>
+        <div class="copyblock">
+          <div class="copyblock-head"><span>STEP 2 · INDUSTRY → NAICS CODES — PASTE THIS</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">ZoomInfo layer</div>
+        </div>
+        <div class="sizenote"><b>STEP 3 · EMPLOYEE COUNT:</b> 50--1,500 starting point. Widen lower if the company clearly manages 5+ hotels.</div>
+        <div class="copyblock">
+          <div class="copyblock-head"><span>STEP 5 · COMPANY KEYWORDS — PASTE THIS</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">&quot;hotel management&quot; OR &quot;hospitality management&quot; OR &quot;hotel operator&quot; OR &quot;hotel operations&quot; OR &quot;management company&quot;</div>
+        </div>
+        <div class="copyblock small">
+          <div class="copyblock-head"><span>SEARCH B · SALES SIGNALS → TECHNOLOGIES — ADD THESE</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">M3 Accounting Core
+M3
+Aptech PVNG
+Aptech
+QuickBooks
+Microsoft Dynamics GP
+NetSuite
+Oracle Financials</div>
+        </div>
+        <div class="combo">🔥 <b>Account-profile tip:</b> when you see this pairing on an account, move it to the top of the list — Oracle OPERA + QuickBooks / Dynamics GP</div>
+        <div class="copyblock small">
+          <div class="copyblock-head"><span>SEARCH C · SCOOPS → GROWTH — SELECT THESE TOPICS</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">New property, Property opening, Management agreement, Conversion, Brand conversion, Portfolio expansion, New market, Refinancing</div>
+        </div>
+        <div class="copyblock small">
+          <div class="copyblock-head"><span>SEARCH D · SCOOPS → FINANCE & REORG — SELECT THESE TOPICS</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">Acquisition, Hotel acquisition, Portfolio acquisition, New CFO, New Controller, Finance hiring, Private equity</div>
+        </div>
+      </div>
+    </div>
+    <div class="lane" data-group="hosp" id="lane-HOSP-02">
+      <div class="lane-head" onclick="this.parentElement.classList.toggle('open')">
+        <span class="lane-code">HOSP-02</span>
+        <span class="lane-title">Hotel Ownership + Multi-Brand Operators</span>
+        <span class="chev">▶</span>
+      </div>
+      <div class="lane-body">
+        <p class="lane-desc">Hotel ownership groups that own and/or operate multiple hotels, brands, entities or real-estate structures.</p>
+        <div class="copyblock">
+          <div class="copyblock-head"><span>STEP 2 · INDUSTRY → NAICS CODES — PASTE THIS</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">ZoomInfo layer</div>
+        </div>
+        <div class="sizenote"><b>STEP 3 · EMPLOYEE COUNT:</b> 50--1,500. Do not over-weight employee count when a holding company has a large portfolio with lean corporate staffing.</div>
+        <div class="copyblock">
+          <div class="copyblock-head"><span>STEP 5 · COMPANY KEYWORDS — PASTE THIS</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">&quot;hotel ownership&quot; OR &quot;hospitality group&quot; OR &quot;hotel portfolio&quot; OR &quot;hotel holdings&quot; OR &quot;hotel investment&quot; OR &quot;multi-brand&quot;</div>
+        </div>
+        <div class="copyblock small">
+          <div class="copyblock-head"><span>SEARCH B · SALES SIGNALS → TECHNOLOGIES — ADD THESE</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">M3
+Aptech
+QuickBooks Enterprise
+Dynamics GP
+NetSuite</div>
+        </div>
+        <div class="combo">🔥 <b>Account-profile tip:</b> when you see this pairing on an account, move it to the top of the list — 10+ properties or multiple brands/states + hotel operating stack + legacy / fragmented finance platform</div>
+        <div class="copyblock small">
+          <div class="copyblock-head"><span>SEARCH C · SCOOPS → GROWTH — SELECT THESE TOPICS</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">New property, Property opening, Management agreement, Conversion, Brand conversion, Portfolio expansion, New market, Refinancing</div>
+        </div>
+        <div class="copyblock small">
+          <div class="copyblock-head"><span>SEARCH D · SCOOPS → FINANCE & REORG — SELECT THESE TOPICS</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">Acquisition, Hotel acquisition, Portfolio acquisition, New CFO, New Controller, Finance hiring, Private equity</div>
+        </div>
+      </div>
+    </div>
+    <div class="lane" data-group="hosp" id="lane-HOSP-03">
+      <div class="lane-head" onclick="this.parentElement.classList.toggle('open')">
+        <span class="lane-code">HOSP-03</span>
+        <span class="lane-title">Resorts / Collections / Complex Lodging Operators</span>
+        <span class="chev">▶</span>
+      </div>
+      <div class="lane-body">
+        <p class="lane-desc">Regional resort collections, destination operators, boutique collections and lodging businesses with F&amp;B, spa, golf or other complex revenue centers.</p>
+        <div class="copyblock">
+          <div class="copyblock-head"><span>STEP 2 · INDUSTRY → NAICS CODES — PASTE THIS</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">ZoomInfo layer</div>
+        </div>
+        <div class="sizenote"><b>STEP 3 · EMPLOYEE COUNT:</b> 50--1,500 starting point; prioritize portfolio and revenue-center complexity over raw headcount.</div>
+        <div class="copyblock">
+          <div class="copyblock-head"><span>STEP 5 · COMPANY KEYWORDS — PASTE THIS</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">resort OR &quot;resort collection&quot; OR &quot;hotel collection&quot; OR &quot;boutique hotel group&quot; OR &quot;destination resort&quot; OR &quot;luxury hospitality&quot;</div>
+        </div>
+        <div class="copyblock small">
+          <div class="copyblock-head"><span>SEARCH B · SALES SIGNALS → TECHNOLOGIES — ADD THESE</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">M3
+Aptech PVNG
+QuickBooks
+Dynamics GP
+NetSuite</div>
+        </div>
+        <div class="combo">🔥 <b>Account-profile tip:</b> when you see this pairing on an account, move it to the top of the list — PMS + POS + spa/golf/events + payroll/AP systems, especially when finance remains legacy or fragmented</div>
+        <div class="copyblock small">
+          <div class="copyblock-head"><span>SEARCH C · SCOOPS → GROWTH — SELECT THESE TOPICS</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">Property expansion, Renovation, New resort, New amenity, New F&amp;B concept, Management agreement, Brand conversion</div>
+        </div>
+        <div class="copyblock small">
+          <div class="copyblock-head"><span>SEARCH D · SCOOPS → FINANCE & REORG — SELECT THESE TOPICS</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">Acquisition, New CFO, New Controller, Finance hiring, Technology implementation</div>
+        </div>
+      </div>
+    </div>
+    <div class="lane" data-group="hosp" id="lane-HOSP-04">
+      <div class="lane-head" onclick="this.parentElement.classList.toggle('open')">
+        <span class="lane-code">HOSP-04</span>
+        <span class="lane-title">Multi-Unit Restaurant Franchisees</span>
+        <span class="chev">▶</span>
+      </div>
+      <div class="lane-body">
+        <p class="lane-desc">Franchise operators running multiple restaurant locations --- especially 10--150 units, 2+ brands, multiple LLCs or multiple states.</p>
+        <div class="copyblock">
+          <div class="copyblock-head"><span>STEP 2 · INDUSTRY → NAICS CODES — PASTE THIS</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">ZoomInfo layer</div>
+        </div>
+        <div class="sizenote"><b>STEP 3 · EMPLOYEE COUNT:</b> 100--5,000. Widen lower when unit count is strong; employee count can be distorted by franchise staffing structures.</div>
+        <div class="copyblock">
+          <div class="copyblock-head"><span>STEP 5 · COMPANY KEYWORDS — PASTE THIS</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">franchisee OR &quot;multi-unit franchisee&quot; OR &quot;franchise operator&quot; OR &quot;restaurant operator&quot; OR &quot;restaurant holdings&quot; OR &quot;multi-unit&quot;</div>
+        </div>
+        <div class="copyblock small">
+          <div class="copyblock-head"><span>SEARCH B · SALES SIGNALS → TECHNOLOGIES — ADD THESE</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">QuickBooks
+QuickBooks Enterprise
+Restaurant365
+Compeat
+Dynamics GP
+NetSuite</div>
+        </div>
+        <div class="combo">🔥 <b>Account-profile tip:</b> when you see this pairing on an account, move it to the top of the list — Toast / Aloha / Brink + QuickBooks + 10+ locations</div>
+        <div class="copyblock small">
+          <div class="copyblock-head"><span>SEARCH C · SCOOPS → GROWTH — SELECT THESE TOPICS</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">New restaurant, New locations, Opening, New market, Expansion, Development agreement, New concept</div>
+        </div>
+        <div class="copyblock small">
+          <div class="copyblock-head"><span>SEARCH D · SCOOPS → FINANCE & REORG — SELECT THESE TOPICS</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">Acquisition, New CFO, New Controller, Finance hiring, Private equity</div>
+        </div>
+      </div>
+    </div>
+    <div class="lane" data-group="hosp" id="lane-HOSP-05">
+      <div class="lane-head" onclick="this.parentElement.classList.toggle('open')">
+        <span class="lane-code">HOSP-05</span>
+        <span class="lane-title">Growing Regional Restaurant Groups / Multi-Concept</span>
+        <span class="chev">▶</span>
+      </div>
+      <div class="lane-body">
+        <p class="lane-desc">Regional restaurant groups typically operating 5--30+ locations, multiple concepts and a centralized corporate office.</p>
+        <div class="copyblock">
+          <div class="copyblock-head"><span>STEP 2 · INDUSTRY → NAICS CODES — PASTE THIS</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">ZoomInfo layer</div>
+        </div>
+        <div class="sizenote"><b>STEP 3 · EMPLOYEE COUNT:</b> 100--5,000 starting point. Keep 5--30 unit groups when multi-concept or multi-entity complexity is obvious.</div>
+        <div class="copyblock">
+          <div class="copyblock-head"><span>STEP 5 · COMPANY KEYWORDS — PASTE THIS</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">&quot;restaurant group&quot; OR &quot;restaurant management&quot; OR &quot;restaurant holdings&quot; OR &quot;multi-concept&quot; OR &quot;hospitality group&quot; OR &quot;restaurant portfolio&quot;</div>
+        </div>
+        <div class="copyblock small">
+          <div class="copyblock-head"><span>SEARCH B · SALES SIGNALS → TECHNOLOGIES — ADD THESE</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">QuickBooks
+QuickBooks Enterprise
+Restaurant365</div>
+        </div>
+        <div class="combo">🔥 <b>Account-profile tip:</b> when you see this pairing on an account, move it to the top of the list — 15 locations + Toast + MarginEdge + QuickBooks</div>
+        <div class="copyblock small">
+          <div class="copyblock-head"><span>SEARCH C · SCOOPS → GROWTH — SELECT THESE TOPICS</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">New restaurant, New locations, Opening, New market, Expansion, Development agreement, New concept</div>
+        </div>
+        <div class="copyblock small">
+          <div class="copyblock-head"><span>SEARCH D · SCOOPS → FINANCE & REORG — SELECT THESE TOPICS</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">Acquisition, New CFO, New Controller, Finance hiring, Private equity</div>
+        </div>
+      </div>
+    </div>
+    <div class="lane" data-group="hosp" id="lane-HOSP-06">
+      <div class="lane-head" onclick="this.parentElement.classList.toggle('open')">
+        <span class="lane-code">HOSP-06</span>
+        <span class="lane-title">Restaurant Franchisors / Rapid Franchise Development</span>
+        <span class="chev">▶</span>
+      </div>
+      <div class="lane-body">
+        <p class="lane-desc">Restaurant brands/franchisors with active franchise development, rapid unit growth or a growing network of franchise partners.</p>
+        <div class="copyblock">
+          <div class="copyblock-head"><span>STEP 2 · INDUSTRY → NAICS CODES — PASTE THIS</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">ZoomInfo layer</div>
+        </div>
+        <div class="sizenote"><b>STEP 3 · EMPLOYEE COUNT:</b> 100--5,000 as a starting point. Unit/network growth matters more than employee count for asset-light franchisors.</div>
+        <div class="copyblock">
+          <div class="copyblock-head"><span>STEP 5 · COMPANY KEYWORDS — PASTE THIS</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">franchisor OR &quot;franchise development&quot; OR &quot;development agreement&quot; OR &quot;franchise partner&quot; OR &quot;planned locations&quot; OR &quot;new markets&quot;</div>
+        </div>
+        <div class="copyblock small">
+          <div class="copyblock-head"><span>SEARCH B · SALES SIGNALS → TECHNOLOGIES — ADD THESE</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">QuickBooks Enterprise
+Dynamics GP
+NetSuite
+Restaurant365
+Oracle
+SAP</div>
+        </div>
+        <div class="combo">🔥 <b>Account-profile tip:</b> when you see this pairing on an account, move it to the top of the list — Franchise management / royalty platform + rapid development activity + growing corporate finance complexity</div>
+        <div class="copyblock small">
+          <div class="copyblock-head"><span>SEARCH C · SCOOPS → GROWTH — SELECT THESE TOPICS</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">Development agreement, Multi-unit development, New franchisee, New franchise partner, Franchise expansion, New market, International expansion, 100 new locations, 50 new locations, 20 new locations, Area development agreement</div>
+        </div>
+        <div class="copyblock small">
+          <div class="copyblock-head"><span>SEARCH D · SCOOPS → FINANCE & REORG — SELECT THESE TOPICS</span><button class="copybtn" onclick="copyIt(this)">⧉ Copy</button></div>
+          <div class="copytext">Acquisition, Private equity, New CFO</div>
+        </div>
+      </div>
+    </div>
+
+  <h2 class="sec">Scoops — How to Read the Triggers</h2>
+  <table>
+    <tr><th style="width:22%">Bucket</th><th style="width:40%">Scoops</th><th>What You Do</th></tr>
+    <tr><td>C · Growth</td><td>Expansion · New location/facility/terminal/plant/property · Openings · New market · Development agreements · Renovation · New concept/product line</td><td>The business is compounding complexity. Lead with the growth story: "congrats on X — how is finance keeping up?"</td></tr>
+    <tr><td>D · Finance & Reorg</td><td>Acquisition · Merger · Private equity · Divestiture · New CFO / Controller · Finance hiring · ERP / system implementation · Shared services / centralization</td><td>Act now. Find the finance leader immediately — new leaders reevaluate everything in their first 90 days.</td></tr>
+    <tr><td>Best combo</td><td>Account appears in B or C <b>and</b> D</td><td>Legacy stack or active growth <i>plus</i> a finance trigger = top of the call list, today.</td></tr>
+  </table>
+
+  <div class="bestpractice">
+    <b>🚫 Never Say "I Saw You Use X" (or "I Saw Your Scoop")</b>
+    Technographic and Scoop data is for prioritizing and forming a hypothesis — not for the opener. Lead with a business question about scale, consolidation, reporting, or integration complexity instead. The data told you where to look; the pain prop is still how you open. Congratulating public news (a new location, an acquisition) is fine — citing their software stack is not.
+  </div>
+
+  <div class="standard">TEAM STANDARD: NAICS = CATEGORY · COMPLEXITY = ICP · TRIGGER = PRIORITY · FINANCE PERSONA = EXECUTION</div>
+
+  <footer>
+    <span>SAGE INTACCT · ZOOMINFO SAVED SEARCH PLAYBOOK</span>
+    <span>FIT + TIMING BEFORE SEQUENCING · KEEP REVENUE SOFT</span>
+  </footer>
+</div>
+
+<script>
+  function copyIt(btn){
+    const text = btn.closest('.copyblock').querySelector('.copytext').innerText;
+    navigator.clipboard.writeText(text).then(()=>{
+      btn.textContent = '✓ Copied'; btn.classList.add('done');
+      setTimeout(()=>{ btn.textContent='⧉ Copy'; btn.classList.remove('done'); }, 1600);
+    }).catch(()=>{
+      const ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta);
+      ta.select(); document.execCommand('copy'); ta.remove();
+      btn.textContent='✓ Copied'; setTimeout(()=>btn.textContent='⧉ Copy',1600);
+    });
+  }
+  function setGroup(g, el){
+    document.querySelectorAll('.grouptab').forEach(t=>t.classList.remove('active'));
+    el.classList.add('active');
+    document.querySelectorAll('.lane').forEach(l=>l.classList.toggle('hidden', l.dataset.group!==g));
+  }
+  setGroup('gb', document.querySelector('.grouptab'));
+</script>
+</body>
+</html>
