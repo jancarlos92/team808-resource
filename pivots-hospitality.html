@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hospitality Pivots — BDR Training</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f0f0f0; --surface:#ffffff; --surface2:#eaf4f1; --surface3:#d8ede8;
+    --border:#b8d9d0; --border-bright:#3DA688;
+    --accent:#2A6B5A; --accent2:#3DA688; --accent3:#5CC98A;
+    --accent-dim:#2A6B5A18; --accent2-dim:#3DA68820;
+    --warn:#c97a00; --warn-dim:#c97a0018; --danger:#cc3333; --danger-dim:#cc333315;
+    --zi:#4a3aff; --zi-dim:#4a3aff12;
+    --text:#1a2e28; --text-mid:#2A6B5A; --text-dim:#6b9e90;
+    --mono:'IBM Plex Mono',monospace; --sans:'DM Sans',sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;line-height:1.55;}
+  .topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:20;flex-wrap:wrap;}
+  .logo{font-family:var(--mono);font-weight:600;font-size:13px;letter-spacing:.06em;color:var(--accent);}
+  .logo span{color:var(--text-dim);font-weight:400;}
+  .tabs{display:flex;gap:6px;margin-left:auto;}
+  .tab{font-size:12px;font-weight:600;color:var(--text-mid);text-decoration:none;padding:7px 13px;border-radius:6px;border:1px solid transparent;}
+  .tab:hover{background:var(--surface2);}
+  .tab.active{background:var(--accent2-dim);border-color:var(--border);color:var(--accent);}
+  .page{max-width:920px;margin:0 auto;padding:34px 20px 70px;}
+  .eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent2);margin-bottom:8px;}
+  h1{font-size:32px;font-weight:700;letter-spacing:-.02em;line-height:1.1;}
+  .subtitle{margin-top:8px;color:var(--text-mid);font-size:14px;max-width:680px;}
+  .philosophy{margin-top:16px;background:var(--accent-dim);border:1px solid var(--accent2);border-radius:8px;padding:12px 16px;font-size:13px;}
+  .philosophy b{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:4px;}
+
+  h2.sec{font-size:19px;font-weight:700;margin:36px 0 4px;}
+  .sec-sub{font-size:13px;color:var(--text-mid);margin-bottom:14px;max-width:680px;}
+
+  /* stack diagram */
+  .stack{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px;}
+  .stack-item{background:var(--surface);border:1px solid var(--border);border-top:3px solid var(--accent2);border-radius:8px;padding:12px;}
+  .stack-item b{font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:var(--accent);display:block;margin-bottom:4px;}
+  .stack-item p{font-size:11.5px;color:var(--text-mid);}
+  .stack-item.d{border-top-color:var(--warn);}
+
+  /* steps */
+  .step{display:grid;grid-template-columns:36px 1fr;gap:14px;margin-top:14px;}
+  .step-num{width:32px;height:32px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;}
+  .step-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:13px 16px;}
+  .step-card h3{font-size:14.5px;font-weight:700;margin-bottom:4px;}
+  .step-card h3 .ui{font-family:var(--mono);font-size:10px;letter-spacing:.04em;background:var(--zi-dim);color:var(--zi);border:1px solid #c8c2ff;border-radius:4px;padding:2px 7px;margin-left:6px;vertical-align:1px;}
+  .step-card p{font-size:12.5px;color:var(--text-mid);}
+  .step-card .why{margin-top:6px;font-size:11.5px;color:var(--text-dim);font-style:italic;}
+
+  /* lane tabs */
+  .grouptabs{display:flex;gap:8px;margin:14px 0 12px;}
+  .grouptab{font-size:12.5px;font-weight:700;cursor:pointer;border-radius:18px;padding:8px 16px;border:1px solid var(--border);background:var(--surface);color:var(--text-mid);}
+  .grouptab.active{background:var(--accent2-dim);border-color:var(--accent2);color:var(--accent);}
+  .lane{background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:8px;overflow:hidden;}
+  .lane.hidden{display:none;}
+  .lane-head{display:flex;align-items:center;gap:12px;padding:13px 16px;cursor:pointer;}
+  .lane-head:hover{background:var(--surface2);}
+  .lane-code{font-family:var(--mono);font-size:10px;font-weight:600;color:var(--accent);background:var(--accent-dim);border-radius:4px;padding:3px 8px;}
+  .lane-title{font-size:14px;font-weight:700;flex:1;}
+  .chev{font-size:9px;color:var(--text-dim);transition:transform .15s;}
+  .lane.open .chev{transform:rotate(90deg);}
+  .lane-body{display:none;padding:4px 16px 16px;border-top:1px dashed var(--border);}
+  .lane.open .lane-body{display:block;}
+  .lane-desc{font-size:12.5px;color:var(--text-mid);padding:10px 0 4px;}
+  .sizenote{font-size:12px;color:var(--text-mid);background:var(--surface2);border-radius:6px;padding:9px 12px;margin:8px 0;}
+  .sizenote b{font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;color:var(--accent);}
+  .combo{font-size:12px;background:var(--warn-dim);border:1px solid var(--warn);border-radius:6px;padding:9px 12px;margin:8px 0;color:var(--text);}
+
+  .copyblock{background:var(--surface2);border:1px solid var(--border);border-radius:6px;margin:8px 0;overflow:hidden;}
+  .copyblock-head{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;border-bottom:1px dashed var(--border);}
+  .copyblock-head span{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);}
+  .copybtn{font-family:var(--mono);font-size:10px;font-weight:600;cursor:pointer;border-radius:12px;padding:4px 12px;border:1px solid var(--accent2);background:var(--surface);color:var(--accent);}
+  .copybtn:hover{background:var(--accent2);color:#fff;}
+  .copybtn.done{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .copytext{font-family:var(--mono);font-size:11.5px;line-height:1.7;padding:10px 12px;white-space:pre-wrap;color:var(--text);}
+  .copyblock.small .copytext{font-size:10.5px;max-height:150px;overflow-y:auto;}
+
+  /* tiers table */
+  table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:10px;background:var(--surface);}
+  th{background:var(--accent);color:#fff;text-align:left;padding:8px 12px;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;}
+  td{border:1px solid var(--border);padding:9px 12px;vertical-align:top;}
+  td:first-child{font-weight:700;white-space:nowrap;}
+
+  .bestpractice{margin-top:14px;background:var(--danger-dim);border:1px solid var(--danger);border-radius:8px;padding:12px 16px;font-size:13px;}
+  .bestpractice b{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--danger);display:block;margin-bottom:4px;}
+  .standard{margin-top:26px;background:var(--text);color:#fff;border-radius:8px;padding:14px 18px;font-family:var(--mono);font-size:11.5px;letter-spacing:.04em;text-align:center;}
+  footer{margin-top:44px;padding-top:14px;border-top:1px solid var(--border);font-family:var(--mono);font-size:10px;color:var(--text-dim);display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;}
+  @media(max-width:720px){.stack{grid-template-columns:1fr 1fr;}h1{font-size:26px;}}
+</style><style>
+  .moves{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:12px;}
+  .move{background:var(--surface);border:1px solid var(--border);border-top:3px solid var(--accent2);border-radius:8px;padding:10px;}
+  .move b{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.06em;color:var(--accent);margin-bottom:3px;}
+  .move p{font-size:11.5px;color:var(--text-mid);}
+  .transitions{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+  .tr{font-size:11.5px;font-style:italic;background:var(--surface2);border-radius:12px;padding:4px 11px;}
+  .jump{display:flex;flex-wrap:wrap;gap:6px;margin-top:18px;}
+  .jump a{font-size:12px;font-weight:600;color:var(--text-mid);text-decoration:none;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:5px 12px;}
+  .jump a:hover{border-color:var(--accent2);color:var(--accent);}
+  .indsec{scroll-margin-top:70px;}
+  .sc{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-top:10px;}
+  .sc h3{font-size:15px;font-weight:700;}
+  .sc .start{font-size:12px;color:var(--text-dim);margin:2px 0 10px;}
+  .lbl{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:2px;}
+  .open{border-left:3px solid var(--accent2);padding-left:11px;font-size:13px;line-height:1.6;margin-bottom:10px;}
+  .open p{margin-bottom:4px;}
+  .resp{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;}
+  .r{border-radius:6px;padding:9px 11px;font-size:12px;line-height:1.55;}
+  .r.pos{background:var(--accent2-dim);} .r.pos .lbl{color:var(--accent);}
+  .r.opp{background:var(--danger-dim);} .r.opp .lbl{color:var(--danger);}
+  .r.short{background:var(--warn-dim);} .r.short .lbl{color:var(--warn);}
+  .lanes{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px;}
+  .ln{background:var(--surface2);border-radius:6px;padding:8px 10px;font-size:11.5px;color:var(--text-mid);line-height:1.5;}
+  .val{background:var(--accent);color:#fff;border-radius:6px;padding:10px 13px;font-size:12.5px;line-height:1.6;}
+  .val .vl{font-family:var(--mono);font-size:9px;letter-spacing:.1em;opacity:.8;display:block;margin-bottom:2px;}
+  .val .vp{margin-bottom:8px;}
+  .val .cl{border-top:1px dashed rgba(255,255,255,.35);padding-top:7px;}
+  @media(max-width:820px){.moves,.lanes{grid-template-columns:repeat(2,1fr);}.resp{grid-template-columns:1fr;}}
+  @media print{.topbar,.jump{display:none;}.sc{break-inside:avoid;}}
+</style>
+<style>
+  [hidden]{display:none !important;}
+  .layoutC{display:grid;grid-template-columns:240px 1fr;gap:20px;align-items:start;margin-top:28px;}
+  .sidebar{position:sticky;top:64px;max-height:calc(100vh - 80px);overflow-y:auto;display:flex;flex-direction:column;gap:2px;padding-right:4px;}
+  .sbh{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin:14px 0 4px;}
+  .sbh:first-child{margin-top:0;}
+  .sbi{font-family:var(--sans);font-size:12.5px;font-weight:600;cursor:pointer;border:1px solid transparent;background:transparent;color:var(--text);border-radius:6px;padding:7px 10px;text-align:left;}
+  .sbi:hover{background:var(--surface);color:var(--accent);}
+  .sbi.on{background:var(--accent);color:#fff;}
+  .sbi:focus-visible{outline:2px solid var(--accent2);outline-offset:1px;}
+  .stage .sc{margin-top:0;}
+  .sc h3{font-size:18px;}
+  @media(max-width:820px){
+    .layoutC{grid-template-columns:1fr;}
+    .sidebar{position:static;max-height:none;flex-direction:row;flex-wrap:wrap;gap:4px;}
+    .sbh{width:100%;}
+    .sbi{border-color:var(--border);background:var(--surface);}
+  }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="logo">SAGE INTACCT <span>· BDR TRAINING</span></span>
+  <div class="tabs"><a class="tab" href="./console.html">📞 Call Console</a><a class="tab" href="./training.html">📚 Training Hub</a><a class="tab active" href="./pivots-hospitality.html">🏨 Hospitality Pivots</a><a class="tab" href="./pivots-general.html">🏭 General Business Pivots</a></div>
+</div>
+<div class="page" style="max-width:1100px;">
+  <div class="eyebrow">BDR Training · Conversational Agility</div>
+  <h1>Hospitality Pivots</h1>
+  <p class="subtitle">Hotels and restaurant groups. Pick the situation you're in from the list and the card comes up.</p>
+  <h2 class="sec">The Six Moves</h2>
+  <div class="moves">
+    <div class="move"><b>1 · BRIDGE</b><p>Use what they said or something true about their business.</p></div>
+    <div class="move"><b>2 · CONTEXT</b><p>Add an observation so the question doesn't feel random.</p></div>
+    <div class="move"><b>3 · OPTIONS</b><p>Offer two experiences. Easy to answer, never an interrogation.</p></div>
+    <div class="move"><b>4 · REACT</b><p>Acknowledge first. Positive, vague, or short: all useful.</p></div>
+    <div class="move"><b>5 · PIVOT</b><p>Industry, software, business cycle, or finance process.</p></div>
+    <div class="move"><b>6 · VALUE + CLOSE</b><p>Once they've opened the door: one value prop, then two days, morning or afternoon.</p></div>
+  </div>
+  <div class="transitions">
+    <span class="tr">"Speaking of…"</span><span class="tr">"That actually makes me curious…"</span><span class="tr">"Sounds like you've got that figured out…"</span><span class="tr">"On a slightly different note…"</span><span class="tr">"With everything going on in your industry…"</span><span class="tr">"How does that change when…"</span><span class="tr">"Walk me through how that works…"</span><span class="tr">"Where does that usually get interesting?"</span>
+  </div>
+
+  
+  
+  <div class="layoutC">
+    <nav class="sidebar" aria-label="Situations"><div class="sbh">Any Industry</div><button class="sbi" data-i="0">They mention QuickBooks</button><button class="sbi" data-i="1">&quot;We do a lot in Excel&quot;</button><button class="sbi" data-i="2">They mention NetSuite</button><button class="sbi" data-i="6">Close takes &quot;about two weeks&quot;</button><button class="sbi" data-i="16">Recent acquisition</button><button class="sbi" data-i="18">They&#x27;re new in the role</button><button class="sbi" data-i="19">&quot;We&#x27;re a lean team&quot;</button><button class="sbi" data-i="20">&quot;Things are slow right now&quot;</button><button class="sbi" data-i="22">Budgeting and forecasting</button><button class="sbi" data-i="23">Audit season</button><div class="sbh">Hotels</div><button class="sbi" data-i="4">They mention their PMS</button><button class="sbi" data-i="8">Owner reporting packs</button><button class="sbi" data-i="15">New property under management</button><button class="sbi" data-i="24">Multiple ownership entities</button><button class="sbi" data-i="26">OTA channel revenue</button><div class="sbh">Restaurant Groups</div><button class="sbi" data-i="5">They mention their POS</button><button class="sbi" data-i="9">Unit-level P&amp;L</button><button class="sbi" data-i="14">New development agreement</button></nav>
+    <div class="stage" id="stage">
+<div class="sc" id="sc-0" hidden>
+      <h3>They mention QuickBooks</h3>
+      <div class="start">📍 Prospect says the accounting side runs on QuickBooks.</div>
+      <div class="open">
+        <p><span class="lbl">Bridge + context</span>"Speaking of QuickBooks — it shows up at a lot of companies your size, usually because it was the right call back when the business was smaller."</p>
+        <p><span class="lbl">Ask with options</span>"How&#x27;s it holding up now — does it still feel like it fits, or are there a few things your team works around at month-end?"</p>
+      </div>
+      <div class="resp">
+        <div class="r pos"><span class="lbl">👍 If it all works great</span>Sounds like it&#x27;s earned its keep. That actually makes me curious — as you&#x27;ve added [locations / entities], is that all still living in one file, or does someone pull pieces together outside of it?</div>
+        <div class="r opp"><span class="lbl">⚠ If they reveal friction</span>When you say [workaround], walk me through what that looks like on day 3 of close. Who&#x27;s doing it, and how long does it take? → Once they size it: &quot;That&#x27;s usually the exact moment teams start looking at what&#x27;s past QuickBooks.&quot;</div>
+        <div class="r short"><span class="lbl">🤐 If the answer is short</span>Totally fair. Most folks I talk to on QuickBooks are fine with the bookkeeping — where it gets interesting is reporting. When ownership asks how one [location / job] did last month, how fast is that answer?</div>
+      </div>
+      <div class="lanes">
+        <div class="ln"><span class="lbl">Industry pivot</span>Ask how something unique to their industry gets tracked — e.g., job costs, units, lanes — and whether QuickBooks holds it or Excel does.</div>
+        <div class="ln"><span class="lbl">Software pivot</span>Ask what else is bolted on: &quot;What sits around QuickBooks — payroll, AP, a reporting tool, or mostly spreadsheets?&quot;</div>
+        <div class="ln"><span class="lbl">Business cycle pivot</span>Ask about growth: &quot;Is the business bigger than it was when QuickBooks went in? What&#x27;s changed?&quot;</div>
+        <div class="ln"><span class="lbl">Finance process pivot</span>Move to close or consolidation: &quot;How many days does month-end take start to finish?&quot;</div>
+      </div>
+      <div class="val"><div class="vp"><span class="vl">💡 VALUE PROP · ONLY IF THEY OPEN THE DOOR</span>"That&#x27;s usually the point where teams move to Sage Intacct. You keep the simplicity, but every [location / entity] reports from one system, so the consolidation spreadsheet goes away."</div><div class="cl"><span class="vl">📅 ASSUMPTIVE CLOSE</span>"I&#x27;d like to get you 20 minutes with a colleague of mine who works with finance teams like yours every day. Do me a favor and pull up your calendar. How does Tuesday or Thursday look, and does morning or afternoon work better for you?"</div></div>
+    </div>
+<div class="sc" id="sc-1" hidden>
+      <h3>&quot;We do a lot in Excel&quot;</h3>
+      <div class="start">📍 Prospect volunteers that a lot of finance work happens in spreadsheets.</div>
+      <div class="open">
+        <p><span class="lbl">Bridge + context</span>"Honestly, that&#x27;s the most normal thing I hear all day — Excel is the duct tape holding half of American finance together."</p>
+        <p><span class="lbl">Ask with options</span>"Is Excel more of a choice for your team — it&#x27;s just faster — or more of a necessity because the system can&#x27;t do it?"</p>
+      </div>
+      <div class="resp">
+        <div class="r pos"><span class="lbl">👍 If it all works great</span>Fair — some teams just love their models. Where does the spreadsheet usually end up? Is it a final report for leadership, or something feeding back into the books?</div>
+        <div class="r opp"><span class="lbl">⚠ If they reveal friction</span>So it&#x27;s a necessity — what&#x27;s the one spreadsheet that would hurt most if the person who owns it went on vacation? → &quot;That&#x27;s the stuff Intacct tends to absorb into the system so it&#x27;s not one person&#x27;s file.&quot;</div>
+        <div class="r short"><span class="lbl">🤐 If the answer is short</span>Gotcha. Quick gut check then — if Excel disappeared tomorrow, would month-end take a little longer or would it just… stop?</div>
+      </div>
+      <div class="lanes">
+        <div class="ln"><span class="lbl">Industry pivot</span>Ask what industry-specific calculation lives in Excel — allocations, settlements, owner reports, royalty math.</div>
+        <div class="ln"><span class="lbl">Software pivot</span>Ask what system the spreadsheet data comes out of, and whether anything flows back automatically.</div>
+        <div class="ln"><span class="lbl">Business cycle pivot</span>Ask whether the spreadsheet count grew as the company grew. &quot;Was it this many files two years ago?&quot;</div>
+        <div class="ln"><span class="lbl">Finance process pivot</span>Move to reporting speed: &quot;How long between month-end and the numbers leadership actually trusts?&quot;</div>
+      </div>
+      <div class="val"><div class="vp"><span class="vl">💡 VALUE PROP · ONLY IF THEY OPEN THE DOOR</span>"What Sage Intacct does is pull those spreadsheets into the system itself, so allocations, reports, and consolidations run automatically instead of living in one person&#x27;s file."</div><div class="cl"><span class="vl">📅 ASSUMPTIVE CLOSE</span>"I&#x27;d like to get you 20 minutes with a colleague of mine who works with finance teams like yours every day. Do me a favor and pull up your calendar. How does Wednesday or Friday look, and does morning or afternoon work better for you?"</div></div>
+    </div>
+<div class="sc" id="sc-2" hidden>
+      <h3>They mention NetSuite</h3>
+      <div class="start">📍 Prospect says they&#x27;re on NetSuite.</div>
+      <div class="open">
+        <p><span class="lbl">Bridge + context</span>"NetSuite — solid platform, and usually a big decision when it went in."</p>
+        <p><span class="lbl">Ask with options</span>"How has it been since the implementation — has it settled into a groove, or does it still need a lot of care and feeding from your team or a consultant?"</p>
+      </div>
+      <div class="resp">
+        <div class="r pos"><span class="lbl">👍 If it all works great</span>Glad to hear it. Out of curiosity, are you using the whole suite or mostly the financials with a couple of modules?</div>
+        <div class="r opp"><span class="lbl">⚠ If they reveal friction</span>When you say care and feeding — is that customizations, reports, or renewals? → If cost comes up: &quot;That&#x27;s usually where companies compare total cost of ownership — Intacct tends to stay predictable.&quot;</div>
+        <div class="r short"><span class="lbl">🤐 If the answer is short</span>Makes sense. When does the renewal come up for you — and was the last one a pleasant conversation or a surprising one?</div>
+      </div>
+      <div class="lanes">
+        <div class="ln"><span class="lbl">Industry pivot</span>Ask whether NetSuite handles their industry-specific need natively or through customization.</div>
+        <div class="ln"><span class="lbl">Software pivot</span>Ask who administers it — internal person, consultant, or partner — and what that costs annually.</div>
+        <div class="ln"><span class="lbl">Business cycle pivot</span>Ask about the renewal timeline and whether the business has changed since signing.</div>
+        <div class="ln"><span class="lbl">Finance process pivot</span>Ask about consolidation and close speed across entities.</div>
+      </div>
+      <div class="val"><div class="vp"><span class="vl">💡 VALUE PROP · ONLY IF THEY OPEN THE DOOR</span>"Teams in your spot usually look at Sage Intacct because the core financials go deeper and the cost stays predictable. Updates are included, and you aren&#x27;t paying for suite modules you don&#x27;t use."</div><div class="cl"><span class="vl">📅 ASSUMPTIVE CLOSE</span>"I&#x27;d like to get you 20 minutes with a colleague of mine who works with finance teams like yours every day. Do me a favor and pull up your calendar. How does Monday or Wednesday look, and does morning or afternoon work better for you?"</div></div>
+    </div>
+<div class="sc" id="sc-4" hidden>
+      <h3>They mention their PMS</h3>
+      <div class="start">📍 Prospect mentions their property management system (Opera, OnQ, etc.).</div>
+      <div class="open">
+        <p><span class="lbl">Bridge + context</span>"Speaking of the PMS — that&#x27;s really the heartbeat of the property, right? Everything starts there."</p>
+        <p><span class="lbl">Ask with options</span>"Once the night audit&#x27;s done, how does that data get over to accounting — does it flow in cleanly, or is there some re-handling along the way?"</p>
+      </div>
+      <div class="resp">
+        <div class="r pos"><span class="lbl">👍 If it all works great</span>That&#x27;s a clean setup. With multiple properties, does each one keep its own books, or is it consolidated somewhere central?</div>
+        <div class="r opp"><span class="lbl">⚠ If they reveal friction</span>Re-handling meaning journal entries keyed by hand, or uploads? Who owns that and how long does it take? → &quot;That handoff is one of the things Intacct automates for management companies.&quot;</div>
+        <div class="r short"><span class="lbl">🤐 If the answer is short</span>Makes sense. What about the revenue side outside rooms — F&amp;B, events, parking — does that roll up the same way?</div>
+      </div>
+      <div class="lanes">
+        <div class="ln"><span class="lbl">Industry pivot</span>Ask about owner reporting packs and the monthly deadline.</div>
+        <div class="ln"><span class="lbl">Software pivot</span>Ask what sits between PMS and GL — a middleware tool, exports, or spreadsheets.</div>
+        <div class="ln"><span class="lbl">Business cycle pivot</span>Ask about new properties or management agreements coming online.</div>
+        <div class="ln"><span class="lbl">Finance process pivot</span>Ask about multi-property consolidation and USALI reporting.</div>
+      </div>
+      <div class="val"><div class="vp"><span class="vl">💡 VALUE PROP · ONLY IF THEY OPEN THE DOOR</span>"Sage Intacct connects to the PMS so the night audit flows straight into the books, and every property reports the same way without anyone rekeying entries."</div><div class="cl"><span class="vl">📅 ASSUMPTIVE CLOSE</span>"I&#x27;d like to get you 20 minutes with a colleague of mine who works with hospitality finance teams every day. Do me a favor and pull up your calendar. How does Thursday or Friday look, and does morning or afternoon work better for you?"</div></div>
+    </div>
+<div class="sc" id="sc-5" hidden>
+      <h3>They mention their POS</h3>
+      <div class="start">📍 Prospect mentions Toast, Square, or another POS.</div>
+      <div class="open">
+        <p><span class="lbl">Bridge + context</span>"Toast is everywhere now — the front-of-house side has gotten really good in the last few years."</p>
+        <p><span class="lbl">Ask with options</span>"Does the back office feel like it kept up — sales flowing into accounting cleanly — or is that still where the manual work lives?"</p>
+      </div>
+      <div class="resp">
+        <div class="r pos"><span class="lbl">👍 If it all works great</span>Love that. How about the costs side — food cost and labor by unit — is that as automated as sales?</div>
+        <div class="r opp"><span class="lbl">⚠ If they reveal friction</span>Where does the manual part show up — daily sales entries, reconciling deposits, tips? → &quot;Groups your size usually fix that by connecting POS straight into a GL that tracks every unit.&quot;</div>
+        <div class="r short"><span class="lbl">🤐 If the answer is short</span>Fair. When you look at your best and worst units, how fast can you see true unit P&amp;L after rent and labor?</div>
+      </div>
+      <div class="lanes">
+        <div class="ln"><span class="lbl">Industry pivot</span>Ask about royalties, food cost variance, or unit-level comparison.</div>
+        <div class="ln"><span class="lbl">Software pivot</span>Ask about the other tools — scheduling, inventory — and how they connect.</div>
+        <div class="ln"><span class="lbl">Business cycle pivot</span>Ask about new units or development plans.</div>
+        <div class="ln"><span class="lbl">Finance process pivot</span>Ask about close timing per unit and consolidation.</div>
+      </div>
+      <div class="val"><div class="vp"><span class="vl">💡 VALUE PROP · ONLY IF THEY OPEN THE DOOR</span>"Restaurant groups connect their POS to Sage Intacct so sales land in the books automatically and every unit has its own P&amp;L, without the daily manual entries."</div><div class="cl"><span class="vl">📅 ASSUMPTIVE CLOSE</span>"I&#x27;d like to get you 20 minutes with a colleague of mine who works with restaurant and franchise finance teams every day. Do me a favor and pull up your calendar. How does Tuesday or Thursday look, and does morning or afternoon work better for you?"</div></div>
+    </div>
+<div class="sc" id="sc-6" hidden>
+      <h3>Close takes &quot;about two weeks&quot;</h3>
+      <div class="start">📍 Prospect says month-end takes around 10–15 days.</div>
+      <div class="open">
+        <p><span class="lbl">Bridge + context</span>"Two weeks — you&#x27;re definitely not alone there."</p>
+        <p><span class="lbl">Ask with options</span>"Is that mostly waiting on information from other teams, or is it the actual work of reconciling and pulling it together?"</p>
+      </div>
+      <div class="resp">
+        <div class="r pos"><span class="lbl">👍 If it all works great</span>Two weeks that runs like clockwork is still a predictable rhythm — I get it. Does leadership ever push to see numbers sooner?</div>
+        <div class="r opp"><span class="lbl">⚠ If they reveal friction</span>So the work is the reconciling — what&#x27;s the longest single step? → &quot;Best-in-class teams are closing in 3–5 days; the gap is usually automation of exactly that step.&quot;</div>
+        <div class="r short"><span class="lbl">🤐 If the answer is short</span>Makes sense. If you got a week of that back every month, what would the team actually spend it on?</div>
+      </div>
+      <div class="lanes">
+        <div class="ln"><span class="lbl">Industry pivot</span>Ask what industry-specific item slows close — settlements, owner packs, job costing, inventory.</div>
+        <div class="ln"><span class="lbl">Software pivot</span>Ask whether the close runs in the system or in checklists and spreadsheets.</div>
+        <div class="ln"><span class="lbl">Business cycle pivot</span>Ask whether close has gotten longer as the business grew.</div>
+        <div class="ln"><span class="lbl">Finance process pivot</span>Ask how many entities or locations get consolidated during close.</div>
+      </div>
+      <div class="val"><div class="vp"><span class="vl">💡 VALUE PROP · ONLY IF THEY OPEN THE DOOR</span>"Teams on Sage Intacct typically cut close by about half, because recurring entries, reconciliations, and consolidations run in the system instead of by hand."</div><div class="cl"><span class="vl">📅 ASSUMPTIVE CLOSE</span>"I&#x27;d like to get you 20 minutes with a colleague of mine who works with finance teams like yours every day. Do me a favor and pull up your calendar. How does Wednesday or Friday look, and does morning or afternoon work better for you?"</div></div>
+    </div>
+<div class="sc" id="sc-8" hidden>
+      <h3>Owner reporting packs</h3>
+      <div class="start">📍 Prospect works at a hotel management company.</div>
+      <div class="open">
+        <p><span class="lbl">Bridge + context</span>"Speaking of management companies — I&#x27;ve heard the 10th of the month described as a holiday nobody celebrates."</p>
+        <p><span class="lbl">Ask with options</span>"When owner packs go out, is that mostly a system output at this point, or still a bit of an all-hands sprint?"</p>
+      </div>
+      <div class="resp">
+        <div class="r pos"><span class="lbl">👍 If it all works great</span>That&#x27;s a well-oiled machine. How does it hold up when you add a new property — same process, or a little setup each time?</div>
+        <div class="r opp"><span class="lbl">⚠ If they reveal friction</span>All-hands sprint — what part takes the longest, the numbers or the formatting for each owner? → &quot;That&#x27;s exactly what Intacct automates for management companies — same pack, every owner, without the sprint.&quot;</div>
+        <div class="r short"><span class="lbl">🤐 If the answer is short</span>Understood. Out of curiosity, do different owners want different reporting formats, or have you standardized it?</div>
+      </div>
+      <div class="lanes">
+        <div class="ln"><span class="lbl">Industry pivot</span>Ask about management fee calculations and incentive fees.</div>
+        <div class="ln"><span class="lbl">Software pivot</span>Ask how PMS and GL data come together for the pack.</div>
+        <div class="ln"><span class="lbl">Business cycle pivot</span>Ask about new management agreements in the pipeline.</div>
+        <div class="ln"><span class="lbl">Finance process pivot</span>Ask about per-property close and consolidation.</div>
+      </div>
+      <div class="val"><div class="vp"><span class="vl">💡 VALUE PROP · ONLY IF THEY OPEN THE DOOR</span>"Management companies use Sage Intacct to generate owner packs and fee calculations from the same system for every property, so the 10th becomes a report run instead of a sprint."</div><div class="cl"><span class="vl">📅 ASSUMPTIVE CLOSE</span>"I&#x27;d like to get you 20 minutes with a colleague of mine who works with hospitality finance teams every day. Do me a favor and pull up your calendar. How does Tuesday or Wednesday look, and does morning or afternoon work better for you?"</div></div>
+    </div>
+<div class="sc" id="sc-9" hidden>
+      <h3>Unit-level P&amp;L</h3>
+      <div class="start">📍 Prospect runs a multi-unit restaurant group.</div>
+      <div class="open">
+        <p><span class="lbl">Bridge + context</span>"With a group your size, I&#x27;d bet you&#x27;ve got a pretty good sense of which units are carrying the team."</p>
+        <p><span class="lbl">Ask with options</span>"When you want to prove it — true P&amp;L after rent, labor, and royalties — is that a quick report or a bit of a project?"</p>
+      </div>
+      <div class="resp">
+        <div class="r pos"><span class="lbl">👍 If it all works great</span>That&#x27;s a strong setup. How do you compare units across brands or regions — same structure, or does each have its quirks?</div>
+        <div class="r opp"><span class="lbl">⚠ If they reveal friction</span>A project — who builds it, and how often does it actually get done? → &quot;Groups your size use Intacct dimensions so unit P&amp;L is just a report you open.&quot;</div>
+        <div class="r short"><span class="lbl">🤐 If the answer is short</span>Fair enough. If you had that unit view every Monday instead of once a month, would it change any decisions?</div>
+      </div>
+      <div class="lanes">
+        <div class="ln"><span class="lbl">Industry pivot</span>Ask about food cost variance or labor percentage by unit.</div>
+        <div class="ln"><span class="lbl">Software pivot</span>Ask how POS and payroll data feed the P&amp;L.</div>
+        <div class="ln"><span class="lbl">Business cycle pivot</span>Ask about new units or acquisitions from other franchisees.</div>
+        <div class="ln"><span class="lbl">Finance process pivot</span>Ask about shared cost allocation and close timing.</div>
+      </div>
+      <div class="val"><div class="vp"><span class="vl">💡 VALUE PROP · ONLY IF THEY OPEN THE DOOR</span>"With Sage Intacct, every unit is a dimension, so true P&amp;L after rent, labor, and royalties is a report you open on Monday instead of a project at month-end."</div><div class="cl"><span class="vl">📅 ASSUMPTIVE CLOSE</span>"I&#x27;d like to get you 20 minutes with a colleague of mine who works with restaurant and franchise finance teams every day. Do me a favor and pull up your calendar. How does Thursday or Friday look, and does morning or afternoon work better for you?"</div></div>
+    </div>
+<div class="sc" id="sc-14" hidden>
+      <h3>New development agreement</h3>
+      <div class="start">📍 Prospect (franchisee) signed a development agreement for more units.</div>
+      <div class="open">
+        <p><span class="lbl">Bridge + context</span>"That&#x27;s a serious commitment — congrats on the deal."</p>
+        <p><span class="lbl">Ask with options</span>"How are you thinking about the back office for those new units — same team and process, or is that part of the plan too?"</p>
+      </div>
+      <div class="resp">
+        <div class="r pos"><span class="lbl">👍 If it all works great</span>Smart to have that figured out up front. What&#x27;s the ratio today — units per back-office person?</div>
+        <div class="r opp"><span class="lbl">⚠ If they reveal friction</span>Part of the plan, but not figured out yet? → &quot;That&#x27;s usually when groups move to a GL that adds units through configuration instead of headcount.&quot;</div>
+        <div class="r short"><span class="lbl">🤐 If the answer is short</span>Understood. Where does the first new unit open, and when?</div>
+      </div>
+      <div class="lanes">
+        <div class="ln"><span class="lbl">Industry pivot</span>Ask about royalty and marketing fund accounting.</div>
+        <div class="ln"><span class="lbl">Software pivot</span>Ask about POS and payroll standardization across new units.</div>
+        <div class="ln"><span class="lbl">Business cycle pivot</span>Ask about financing for the development schedule.</div>
+        <div class="ln"><span class="lbl">Finance process pivot</span>Ask about unit-level reporting for lenders.</div>
+      </div>
+      <div class="val"><div class="vp"><span class="vl">💡 VALUE PROP · ONLY IF THEY OPEN THE DOOR</span>"Franchise groups use Sage Intacct to add units through configuration instead of headcount, so the back office is already sized for the development schedule."</div><div class="cl"><span class="vl">📅 ASSUMPTIVE CLOSE</span>"I&#x27;d like to get you 20 minutes with a colleague of mine who works with restaurant and franchise finance teams every day. Do me a favor and pull up your calendar. How does Thursday or Friday look, and does morning or afternoon work better for you?"</div></div>
+    </div>
+<div class="sc" id="sc-15" hidden>
+      <h3>New property under management</h3>
+      <div class="start">📍 Prospect&#x27;s management company just added a property.</div>
+      <div class="open">
+        <p><span class="lbl">Bridge + context</span>"Speaking of growth — another property under management is a nice win."</p>
+        <p><span class="lbl">Ask with options</span>"How smooth is the onboarding on the accounting side — set it up and go, or a few weeks of building books and owner reports?"</p>
+      </div>
+      <div class="resp">
+        <div class="r pos"><span class="lbl">👍 If it all works great</span>That&#x27;s fast. Is there a ceiling on how many your current team could handle?</div>
+        <div class="r opp"><span class="lbl">⚠ If they reveal friction</span>A few weeks — mostly the chart of accounts or the owner reporting? → &quot;Management companies use Intacct to onboard properties quickly with a standardized setup.&quot;</div>
+        <div class="r short"><span class="lbl">🤐 If the answer is short</span>Gotcha. How many properties are in the pipeline for next year?</div>
+      </div>
+      <div class="lanes">
+        <div class="ln"><span class="lbl">Industry pivot</span>Ask about management and incentive fee calculations.</div>
+        <div class="ln"><span class="lbl">Software pivot</span>Ask whether new properties keep their existing PMS.</div>
+        <div class="ln"><span class="lbl">Business cycle pivot</span>Ask about the pipeline of management agreements.</div>
+        <div class="ln"><span class="lbl">Finance process pivot</span>Ask about consolidation across the portfolio.</div>
+      </div>
+      <div class="val"><div class="vp"><span class="vl">💡 VALUE PROP · ONLY IF THEY OPEN THE DOOR</span>"Management companies use Sage Intacct to onboard a property with a standard setup in days, so new agreements turn into fee revenue faster."</div><div class="cl"><span class="vl">📅 ASSUMPTIVE CLOSE</span>"I&#x27;d like to get you 20 minutes with a colleague of mine who works with hospitality finance teams every day. Do me a favor and pull up your calendar. How does Tuesday or Thursday look, and does morning or afternoon work better for you?"</div></div>
+    </div>
+<div class="sc" id="sc-16" hidden>
+      <h3>Recent acquisition</h3>
+      <div class="start">📍 Prospect mentions (or you found a scoop about) an acquisition.</div>
+      <div class="open">
+        <p><span class="lbl">Bridge + context</span>"With everything going on with the acquisition — that&#x27;s probably keeping finance pretty busy."</p>
+        <p><span class="lbl">Ask with options</span>"How are the new entities coming into reporting — folded into your system, or running side by side for now?"</p>
+      </div>
+      <div class="resp">
+        <div class="r pos"><span class="lbl">👍 If it all works great</span>Already folded in — that&#x27;s fast. Was that a standard process, or did you build it as you went?</div>
+        <div class="r opp"><span class="lbl">⚠ If they reveal friction</span>Side by side — so someone bridges them each month? How long does that take? → &quot;That&#x27;s where Intacct helps — entities added without re-implementation, consolidation automated.&quot;</div>
+        <div class="r short"><span class="lbl">🤐 If the answer is short</span>Makes sense. Is more acquisition on the roadmap, or was this a one-time thing?</div>
+      </div>
+      <div class="lanes">
+        <div class="ln"><span class="lbl">Industry pivot</span>Ask about differences in how the acquired company operates.</div>
+        <div class="ln"><span class="lbl">Software pivot</span>Ask what system the acquired company runs on.</div>
+        <div class="ln"><span class="lbl">Business cycle pivot</span>Ask about the broader strategy — more deals, PE involvement.</div>
+        <div class="ln"><span class="lbl">Finance process pivot</span>Ask about intercompany eliminations and consolidated reporting.</div>
+      </div>
+      <div class="val"><div class="vp"><span class="vl">💡 VALUE PROP · ONLY IF THEY OPEN THE DOOR</span>"Sage Intacct adds new entities without a re-implementation and automates the eliminations, so the consolidated view is ready without someone bridging it every month."</div><div class="cl"><span class="vl">📅 ASSUMPTIVE CLOSE</span>"I&#x27;d like to get you 20 minutes with a colleague of mine who works with finance teams like yours every day. Do me a favor and pull up your calendar. How does Wednesday or Friday look, and does morning or afternoon work better for you?"</div></div>
+    </div>
+<div class="sc" id="sc-18" hidden>
+      <h3>They&#x27;re new in the role</h3>
+      <div class="start">📍 The finance leader on the phone recently started.</div>
+      <div class="open">
+        <p><span class="lbl">Bridge + context</span>"Congrats on the new role — the first few months are usually a lot of figuring out where everything lives."</p>
+        <p><span class="lbl">Ask with options</span>"How&#x27;s it been so far — have you found the finance setup pretty solid, or a few surprises?"</p>
+      </div>
+      <div class="resp">
+        <div class="r pos"><span class="lbl">👍 If it all works great</span>That&#x27;s a nice thing to inherit. What&#x27;s on your list for the first year?</div>
+        <div class="r opp"><span class="lbl">⚠ If they reveal friction</span>A few surprises — like what? Process, systems, people? → &quot;New finance leaders often use this window to benchmark — that&#x27;s exactly what a first meeting with us looks like.&quot;</div>
+        <div class="r short"><span class="lbl">🤐 If the answer is short</span>Understood. What was the setup like at your last company? Anything you miss?</div>
+      </div>
+      <div class="lanes">
+        <div class="ln"><span class="lbl">Industry pivot</span>Ask how this company&#x27;s industry differs from their last role.</div>
+        <div class="ln"><span class="lbl">Software pivot</span>Ask what system they used before and how this one compares.</div>
+        <div class="ln"><span class="lbl">Business cycle pivot</span>Ask what leadership hired them to accomplish.</div>
+        <div class="ln"><span class="lbl">Finance process pivot</span>Ask about close speed and reporting they inherited.</div>
+      </div>
+      <div class="val"><div class="vp"><span class="vl">💡 VALUE PROP · ONLY IF THEY OPEN THE DOOR</span>"A lot of new finance leaders use their first few months to benchmark what they inherited against how best-in-class teams run on Sage Intacct: close speed, reporting, and controls."</div><div class="cl"><span class="vl">📅 ASSUMPTIVE CLOSE</span>"I&#x27;d like to get you 20 minutes with a colleague of mine who works with finance teams like yours every day. Do me a favor and pull up your calendar. How does Tuesday or Wednesday look, and does morning or afternoon work better for you?"</div></div>
+    </div>
+<div class="sc" id="sc-19" hidden>
+      <h3>&quot;We&#x27;re a lean team&quot;</h3>
+      <div class="start">📍 Prospect says the finance team is small or stretched.</div>
+      <div class="open">
+        <p><span class="lbl">Bridge + context</span>"Lean finance teams are kind of the norm now — everyone&#x27;s doing more with the same people."</p>
+        <p><span class="lbl">Ask with options</span>"Is the team lean because the process is efficient, or lean because you&#x27;re just holding it together with good people?"</p>
+      </div>
+      <div class="resp">
+        <div class="r pos"><span class="lbl">👍 If it all works great</span>That&#x27;s a great spot. How does it hold up during audit or year-end?</div>
+        <div class="r opp"><span class="lbl">⚠ If they reveal friction</span>Good people holding it together — what happens if someone leaves? → &quot;That&#x27;s the key-person risk Intacct reduces by building the process into the system.&quot;</div>
+        <div class="r short"><span class="lbl">🤐 If the answer is short</span>Fair enough. If you could get one task off the team&#x27;s plate permanently, what would it be?</div>
+      </div>
+      <div class="lanes">
+        <div class="ln"><span class="lbl">Industry pivot</span>Ask about the most time-consuming industry-specific task.</div>
+        <div class="ln"><span class="lbl">Software pivot</span>Ask about AP, approvals, or anything still manual.</div>
+        <div class="ln"><span class="lbl">Business cycle pivot</span>Ask whether hiring is planned or frozen.</div>
+        <div class="ln"><span class="lbl">Finance process pivot</span>Ask about close and reporting workload.</div>
+      </div>
+      <div class="val"><div class="vp"><span class="vl">💡 VALUE PROP · ONLY IF THEY OPEN THE DOOR</span>"Sage Intacct automates the repetitive work, like recurring entries, approvals, and reconciliations, so a lean team can handle more growth without adding people."</div><div class="cl"><span class="vl">📅 ASSUMPTIVE CLOSE</span>"I&#x27;d like to get you 20 minutes with a colleague of mine who works with finance teams like yours every day. Do me a favor and pull up your calendar. How does Thursday or Friday look, and does morning or afternoon work better for you?"</div></div>
+    </div>
+<div class="sc" id="sc-20" hidden>
+      <h3>&quot;Things are slow right now&quot;</h3>
+      <div class="start">📍 Prospect says business is flat or they&#x27;re tightening the belt.</div>
+      <div class="open">
+        <p><span class="lbl">Bridge + context</span>"I hear that a lot this year — a lot of companies are in &quot;make what we have work&quot; mode."</p>
+        <p><span class="lbl">Ask with options</span>"When things slow down, does that free up finance to fix things, or does it put more pressure on finding where the money is going?"</p>
+      </div>
+      <div class="resp">
+        <div class="r pos"><span class="lbl">👍 If it all works great</span>Makes sense to sit tight. When things pick back up, what would you want in place?</div>
+        <div class="r opp"><span class="lbl">⚠ If they reveal friction</span>More pressure on visibility — what&#x27;s hard to see today? → &quot;Visibility into costs by location or job is usually where Intacct pays for itself in a slower year.&quot;</div>
+        <div class="r short"><span class="lbl">🤐 If the answer is short</span>Understood. Is the slowdown across the business or in certain areas?</div>
+      </div>
+      <div class="lanes">
+        <div class="ln"><span class="lbl">Industry pivot</span>Ask which part of the business is feeling it most.</div>
+        <div class="ln"><span class="lbl">Software pivot</span>Ask whether they&#x27;re consolidating tools to cut costs.</div>
+        <div class="ln"><span class="lbl">Business cycle pivot</span>Ask what would signal a turnaround.</div>
+        <div class="ln"><span class="lbl">Finance process pivot</span>Ask about budgeting and cost control.</div>
+      </div>
+      <div class="val"><div class="vp"><span class="vl">💡 VALUE PROP · ONLY IF THEY OPEN THE DOOR</span>"In a slower year, Sage Intacct pays for itself through visibility. You can see costs by location, job, or department in real time and spot savings before they slip by."</div><div class="cl"><span class="vl">📅 ASSUMPTIVE CLOSE</span>"I&#x27;d like to get you 20 minutes with a colleague of mine who works with finance teams like yours every day. Do me a favor and pull up your calendar. How does Tuesday or Thursday look, and does morning or afternoon work better for you?"</div></div>
+    </div>
+<div class="sc" id="sc-22" hidden>
+      <h3>Budgeting and forecasting</h3>
+      <div class="start">📍 The conversation touches on budgeting or planning season.</div>
+      <div class="open">
+        <p><span class="lbl">Bridge + context</span>"Speaking of budgets — I&#x27;ve heard budgeting season described as Excel&#x27;s Super Bowl."</p>
+        <p><span class="lbl">Ask with options</span>"Is budget-to-actual something you check every month in the system, or more of a once-a-quarter spreadsheet exercise?"</p>
+      </div>
+      <div class="resp">
+        <div class="r pos"><span class="lbl">👍 If it all works great</span>Monthly in the system — that&#x27;s ahead of most. Does it go down to the location or department level?</div>
+        <div class="r opp"><span class="lbl">⚠ If they reveal friction</span>A quarterly spreadsheet — so it&#x27;s hard to course-correct mid-year? → &quot;Intacct ties budgets to actuals in real time, so variance shows up while you can still act.&quot;</div>
+        <div class="r short"><span class="lbl">🤐 If the answer is short</span>Makes sense. Who owns the budget process — finance, or each department?</div>
+      </div>
+      <div class="lanes">
+        <div class="ln"><span class="lbl">Industry pivot</span>Ask about industry-specific budget drivers (occupancy, units, loads).</div>
+        <div class="ln"><span class="lbl">Software pivot</span>Ask what tool they use for planning.</div>
+        <div class="ln"><span class="lbl">Business cycle pivot</span>Ask about growth plans baked into the budget.</div>
+        <div class="ln"><span class="lbl">Finance process pivot</span>Ask about variance reporting.</div>
+      </div>
+      <div class="val"><div class="vp"><span class="vl">💡 VALUE PROP · ONLY IF THEY OPEN THE DOOR</span>"Sage Intacct ties the budget to actuals in real time, so variance shows up mid-month while there&#x27;s still time to course-correct."</div><div class="cl"><span class="vl">📅 ASSUMPTIVE CLOSE</span>"I&#x27;d like to get you 20 minutes with a colleague of mine who works with finance teams like yours every day. Do me a favor and pull up your calendar. How does Monday or Wednesday look, and does morning or afternoon work better for you?"</div></div>
+    </div>
+<div class="sc" id="sc-23" hidden>
+      <h3>Audit season</h3>
+      <div class="start">📍 Prospect mentions audit or year-end.</div>
+      <div class="open">
+        <p><span class="lbl">Bridge + context</span>"Ah, audit season — the time of year when everyone suddenly remembers where every file is."</p>
+        <p><span class="lbl">Ask with options</span>"How do audits usually go — pretty routine, or does it take over the team for a few weeks?"</p>
+      </div>
+      <div class="resp">
+        <div class="r pos"><span class="lbl">👍 If it all works great</span>Routine — that&#x27;s a well-documented setup. How about requests from the bank or investors — same ease?</div>
+        <div class="r opp"><span class="lbl">⚠ If they reveal friction</span>Takes over — mostly pulling support, or explaining how things are done? → &quot;Intacct&#x27;s audit trail and controls make that a lot more routine.&quot;</div>
+        <div class="r short"><span class="lbl">🤐 If the answer is short</span>Got it. Who&#x27;s the auditor? (Asking because some audit firms actually recommend us.)</div>
+      </div>
+      <div class="lanes">
+        <div class="ln"><span class="lbl">Industry pivot</span>Ask about industry-specific audit areas (revenue recognition, inventory).</div>
+        <div class="ln"><span class="lbl">Software pivot</span>Ask whether audit support comes from the system or spreadsheets.</div>
+        <div class="ln"><span class="lbl">Business cycle pivot</span>Ask about financing or deals that require audited financials.</div>
+        <div class="ln"><span class="lbl">Finance process pivot</span>Ask about controls and approvals.</div>
+      </div>
+      <div class="val"><div class="vp"><span class="vl">💡 VALUE PROP · ONLY IF THEY OPEN THE DOOR</span>"Sage Intacct keeps a full audit trail and built-in controls, so audit support comes straight out of the system instead of a few weeks of pulling files."</div><div class="cl"><span class="vl">📅 ASSUMPTIVE CLOSE</span>"I&#x27;d like to get you 20 minutes with a colleague of mine who works with finance teams like yours every day. Do me a favor and pull up your calendar. How does Tuesday or Wednesday look, and does morning or afternoon work better for you?"</div></div>
+    </div>
+<div class="sc" id="sc-24" hidden>
+      <h3>Multiple ownership entities</h3>
+      <div class="start">📍 Prospect is at a hotel ownership group with an entity per property.</div>
+      <div class="open">
+        <p><span class="lbl">Bridge + context</span>"Hotel ownership groups usually have an org chart that looks like a family tree — an entity for nearly every property."</p>
+        <p><span class="lbl">Ask with options</span>"When a lender or partner asks for the full portfolio picture, is that pretty quick, or does it take some assembly?"</p>
+      </div>
+      <div class="resp">
+        <div class="r pos"><span class="lbl">👍 If it all works great</span>Quick — impressive for that many entities. How do you handle intercompany between them?</div>
+        <div class="r opp"><span class="lbl">⚠ If they reveal friction</span>Takes assembly — who does it, and how often? → &quot;Ownership groups use Intacct to consolidate entities automatically, so the portfolio view is always ready.&quot;</div>
+        <div class="r short"><span class="lbl">🤐 If the answer is short</span>Understood. How many entities are we talking about?</div>
+      </div>
+      <div class="lanes">
+        <div class="ln"><span class="lbl">Industry pivot</span>Ask about different brands and reporting formats.</div>
+        <div class="ln"><span class="lbl">Software pivot</span>Ask about each property&#x27;s system and the consolidation tool.</div>
+        <div class="ln"><span class="lbl">Business cycle pivot</span>Ask about acquisitions or recapitalizations planned.</div>
+        <div class="ln"><span class="lbl">Finance process pivot</span>Ask about lender reporting and distributions.</div>
+      </div>
+      <div class="val"><div class="vp"><span class="vl">💡 VALUE PROP · ONLY IF THEY OPEN THE DOOR</span>"Ownership groups use Sage Intacct to consolidate every entity automatically, so the portfolio view is ready whenever a lender or partner asks for it."</div><div class="cl"><span class="vl">📅 ASSUMPTIVE CLOSE</span>"I&#x27;d like to get you 20 minutes with a colleague of mine who works with hospitality finance teams every day. Do me a favor and pull up your calendar. How does Thursday or Friday look, and does morning or afternoon work better for you?"</div></div>
+    </div>
+<div class="sc" id="sc-26" hidden>
+      <h3>OTA channel revenue</h3>
+      <div class="start">📍 The conversation is on hotel revenue.</div>
+      <div class="open">
+        <p><span class="lbl">Bridge + context</span>"Speaking of revenue — the OTAs have made hotel accounting a lot more interesting in the last few years."</p>
+        <p><span class="lbl">Ask with options</span>"How does your team break out revenue and fees by channel — pretty clean, or a bit of a reconciliation puzzle?"</p>
+      </div>
+      <div class="resp">
+        <div class="r pos"><span class="lbl">👍 If it all works great</span>Clean — that&#x27;s great. Can you see net revenue by channel after commissions?</div>
+        <div class="r opp"><span class="lbl">⚠ If they reveal friction</span>A puzzle — what&#x27;s the hardest part, remittance timing or matching fees? → &quot;Intacct automates channel reconciliation and reports revenue by channel and property.&quot;</div>
+        <div class="r short"><span class="lbl">🤐 If the answer is short</span>Got it. What&#x27;s the split roughly between direct and OTA?</div>
+      </div>
+      <div class="lanes">
+        <div class="ln"><span class="lbl">Industry pivot</span>Ask about other revenue streams (F&amp;B, events).</div>
+        <div class="ln"><span class="lbl">Software pivot</span>Ask about the PMS and channel manager integration.</div>
+        <div class="ln"><span class="lbl">Business cycle pivot</span>Ask about strategies to shift to direct bookings.</div>
+        <div class="ln"><span class="lbl">Finance process pivot</span>Ask about property-level P&amp;L.</div>
+      </div>
+      <div class="val"><div class="vp"><span class="vl">💡 VALUE PROP · ONLY IF THEY OPEN THE DOOR</span>"Sage Intacct reports net revenue by channel and property after commissions, so you can see what each OTA actually earns you without the reconciliation puzzle."</div><div class="cl"><span class="vl">📅 ASSUMPTIVE CLOSE</span>"I&#x27;d like to get you 20 minutes with a colleague of mine who works with hospitality finance teams every day. Do me a favor and pull up your calendar. How does Wednesday or Friday look, and does morning or afternoon work better for you?"</div></div>
+    </div>
+    </div>
+  </div>
+  <footer><span>SAGE INTACCT · HOSPITALITY PIVOTS</span><span>18 SITUATIONS · THE MEETING IS ALWAYS WITH A COLLEAGUE</span></footer>
+</div>
+<script>
+  const ids = [0, 1, 2, 4, 5, 6, 8, 9, 14, 15, 16, 18, 19, 20, 22, 23, 24, 26];
+  function show(i, push){
+    if (!ids.includes(i)) i = ids[0];
+    document.querySelectorAll('.stage .sc').forEach(c => c.hidden = true);
+    document.getElementById('sc-' + i).hidden = false;
+    document.querySelectorAll('.sbi').forEach(b => b.classList.toggle('on', +b.dataset.i === i));
+    if (push) history.replaceState(null, '', '#s' + i);
+    if (push && window.innerWidth <= 820) document.getElementById('stage').scrollIntoView({behavior:'smooth'});
+  }
+  document.querySelector('.sidebar').addEventListener('click', ev => {
+    const b = ev.target.closest('.sbi'); if (b) show(+b.dataset.i, true);
+  });
+  const h = location.hash.match(/^#s(\d+)$/);
+  show(h ? +h[1] : ids[0], false);
+</script>
+</body>
+</html>
